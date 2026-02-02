@@ -1,13 +1,8 @@
 import boto3
-# Creating the EC2 commands
-class EC2Manager:
-    def __init__(self):
-        self.ec2 = boto3.resource('ec2')
-    
-    def instanceCreate(instance_type, instance_ami)
-            EncodingWarnigfdg
-            fdjkb
-            jyjhbnג
-            
-        
-קכ'
+VALID_TYPES = ["t3.micro", "t3.small"]
+AMI = ["latest ubuntu", "latest amazon linux"]
+ec2 = boto3.resource('ec2', region_name='us-east-1')
+
+def instanceCreate(instance_type, instance_ami):
+    try:
+        instances: ec2.create_in
