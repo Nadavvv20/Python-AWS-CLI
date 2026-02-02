@@ -1,15 +1,13 @@
 import boto3
 import os
 import sys
-
 # Add parent directory to path to import utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from utils.ui_helpers import progress_spinner
 
 
-# Creating the EC2 commands
-class EC2Manager:
+# Creating the EC2 create command
+class EC2Creator:
     def __init__(self):
         # Resource definition 
         self.resource = boto3.resource('ec2', region_name='us-east-1')
@@ -49,7 +47,7 @@ class EC2Manager:
 
         except Exception as e:
             print(f"❌ Could not fetch AMI {ami_name} from SSM: {str(e)}")
-            return None
+            return
 
 
 
@@ -84,10 +82,10 @@ class EC2Manager:
     def create_instance(self, ami_input, instance_type_input, instance_name_input):
         # Validating the parameters
         self._validate_inputs(instance_type_input, ami_input)
-
+        
+        # Get the aws user name
         try:
-            identity = self.sts.get_caller_identity()
-            # Get the aws user name
+            identity = self.sts.get_caller_identity()    
             aws_user = identity['Arn'].split('/')[-1]
         except Exception as e:
             print(f"⚠️ Warning: Could not detect AWS user, using 'unknown'. Error: {e}")
@@ -95,7 +93,7 @@ class EC2Manager:
 
         # Get the ami id
         ami_id = self.get_latest_ami_id(ami_input)
-        # If coudn't manage to get the ami id:
+        # If couldn't manage to get the ami id:
         if not ami_id:
             return
 
