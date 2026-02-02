@@ -5,7 +5,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # 2. Importing the class
-from src.ec2.EC2 import EC2Manager
+from src.EC2.ec2_create_instance import EC2Manager
 
 def run_manual_tests():
     manager = EC2Manager()
@@ -27,7 +27,7 @@ def run_manual_tests():
     if manager.is_quota_available():
         print("✅ Quota check passed.")
     else:
-        print("⚠️ Quota reached or check failed.")
+        print("⚠️  Quota reached or check failed.")
 
     # בדיקת יצירה (מושבת כברירת מחדל)
     print("\nTesting Instance Creation...")

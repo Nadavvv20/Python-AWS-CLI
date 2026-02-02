@@ -1,5 +1,12 @@
 import boto3
 import os
+import sys
+
+# Add parent directory to path to import utils
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from utils.ui_helpers import progress_spinner
+
 
 # Creating the EC2 commands
 class EC2Manager:
@@ -53,13 +60,13 @@ class EC2Manager:
             raise ValueError(f"❌ This type is not valid - You are allowed to create only {self.ALLOWED_TYPES[0]} or {self.ALLOWED_TYPES[1]}")
 
     def is_quota_available(self):
-        print("Checking instances created by Nadav-platform-cli...")
+        print("Checking instances created by Nadav-Platform-CLI...")
         # Filtering for instances with the specific tag AND that are not terminated
         instances = self.resource.instances.filter(
             Filters=[
                 {
                     'Name': 'tag:CreatedBy',
-                    'Values': ['Nadav-platform-cli']
+                    'Values': ['Nadav-Platform-CLI']
                 },
                 {
                     'Name': 'instance-state-name',
@@ -98,29 +105,31 @@ class EC2Manager:
             return
 
         # Creation of the instance:
-        print("🚀 Creating instance...")
         try: 
-            instances = self.resource.create_instances(
-                ImageId = ami_id,
-                InstanceType = instance_type_input,
-                KeyName = self.KEY_NAME,
-                SecurityGroupIds = self.SECURITY_GROUP_IDS,
-                TagSpecifications=[
-                    {
-                        'ResourceType': 'instance',
-                        'Tags': [
-                            {'Key': 'Name', 'Value': instance_name_input},
-                            {'Key': 'CreatedBy', 'Value': 'Nadav-Platform-CLI'},
-                            {'Key': 'Owner', 'Value': aws_user},
-                        ]
-                    }
-                ],
-                MinCount=1,
-                MaxCount=1
-            )
-            new_instance = instances[0]
-            print("⏳ Waiting for instance to be running...")
-            new_instance.wait_until_running()
+            with progress_spinner("Creating instance..."):
+                instances = self.resource.create_instances(
+                    ImageId = ami_id,
+                    InstanceType = instance_type_input,
+                    KeyName = self.KEY_NAME,
+                    SecurityGroupIds = self.SECURITY_GROUP_IDS,
+                    TagSpecifications=[
+                        {
+                            'ResourceType': 'instance',
+                            'Tags': [
+                                {'Key': 'Name', 'Value': instance_name_input},
+                                {'Key': 'CreatedBy', 'Value': 'Nadav-Platform-CLI'},
+                                {'Key': 'Owner', 'Value': aws_user},
+                            ]
+                        }
+                    ],
+                    MinCount=1,
+                    MaxCount=1
+                )
+                new_instance = instances[0]
+            
+            with progress_spinner("Waiting for instance to be running..."):
+                new_instance.wait_until_running()
+            
             print("✅ Instance is up and running!")
             return(f"Instance Id: {new_instance.id}")
         
