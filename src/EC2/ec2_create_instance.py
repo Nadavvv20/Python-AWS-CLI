@@ -10,7 +10,7 @@ from utils.ui_helpers import progress_spinner
 class EC2Creator:
     def __init__(self):
         # Resource definition 
-        self.resource = boto3.resource('ec2', region_name='us-east-1')
+        self.client = boto3.client('ec2', region_name='us-east-1')
         self.ssm = boto3.client('ssm', region_name='us-east-1')
         self.sts = boto3.client('sts')
 
@@ -60,7 +60,7 @@ class EC2Creator:
     def is_quota_available(self):
         print("Checking instances created by Nadav-Platform-CLI...")
         # Filtering for instances with the specific tag AND that are not terminated
-        instances = self.resource.instances.filter(
+        response = self.client.describe_instances(
             Filters=[
                 {
                     'Name': 'tag:CreatedBy',
@@ -72,7 +72,11 @@ class EC2Creator:
                 }
             ]
         )
-        count = len(list(instances))
+        
+        count = 0
+        for reservation in response.get('Reservations', []):
+            count += len(reservation.get('Instances', []))
+
         print(f"Found {count} instances.")
         
         if count >= self.LIMIT:
@@ -103,9 +107,10 @@ class EC2Creator:
             return
 
         # Creation of the instance:
+        # Creation of the instance:
         try: 
             with progress_spinner("Creating instance..."):
-                instances = self.resource.create_instances(
+                response = self.client.run_instances(
                     ImageId = ami_id,
                     InstanceType = instance_type_input,
                     KeyName = self.KEY_NAME,
@@ -123,13 +128,14 @@ class EC2Creator:
                     MinCount=1,
                     MaxCount=1
                 )
-                new_instance = instances[0]
+                new_instance_id = response['Instances'][0]['InstanceId']
             
             with progress_spinner("Waiting for instance to be running..."):
-                new_instance.wait_until_running()
+                waiter = self.client.get_waiter('instance_running')
+                waiter.wait(InstanceIds=[new_instance_id])
             
             print("✅ Instance is up and running!")
-            return(f"Instance Id: {new_instance.id}")
+            return(f"Instance Id: {new_instance_id}")
         
 
         except Exception as e:
