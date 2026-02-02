@@ -1,2 +1,13 @@
 import boto3
-# This is tthe file where I will write the code to create the EC2 commands
+# Creating the EC2 commands
+class EC2Manager:
+    def __init__(self):
+        self.ec2 = boto3.resource('ec2')
+    
+    def instanceCreate(instance_type, instance_ami)
+            EncodingWarnigfdg
+            fdjkb
+            jyjhbnג
+            
+        
+קכ'
