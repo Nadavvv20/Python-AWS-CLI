@@ -1,9 +1,18 @@
 import boto3
+import os
+import sys
+# Add parent directory to path to import utils
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-ec2 = boto3.resource('ec2', region_name='us-east-1')
+from utils.ui_helpers import progress_spinner
+from rich.console import Console
+console = Console()
+
+ec2 = boto3.client('ec2', region_name='us-east-1')
 
 def list_instances():
-    instances = ec2.instances.filter(
+    with progress_spinner("Listing instances..."):
+        response = ec2.describe_instances(
             Filters=[
                 {
                     'Name': 'tag:CreatedBy',
@@ -15,4 +24,15 @@ def list_instances():
                 }
             ]
         )
+        
+        instances = []
+        for reservation in response.get('Reservations', []):
+            for instance in reservation.get('Instances', []):
+                instances.append(instance)
+                print(instance['InstanceId'])
+        if not instances:
+            console.print("[yellow]⚠️  No instances found matching your criteria (Tag: CreatedBy=Nadav-Platform-CLI).[/yellow]")
+            return
+
+
     
