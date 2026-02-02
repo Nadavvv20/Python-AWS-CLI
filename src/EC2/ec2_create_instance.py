@@ -1,18 +1,18 @@
 import boto3
 import os
 import sys
-
 # Add parent directory to path to import utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from utils.ui_helpers import progress_spinner
+from rich.console import Console
+console = Console()
+console.print(":cloud: [bold blue]Connecting to AWS...[/bold blue]")
 
-
-# Creating the EC2 commands
-class EC2Manager:
+# Creating the EC2 create command
+class EC2Creator:
     def __init__(self):
         # Resource definition 
-        self.resource = boto3.resource('ec2', region_name='us-east-1')
+        self.client = boto3.client('ec2', region_name='us-east-1')
         self.ssm = boto3.client('ssm', region_name='us-east-1')
         self.sts = boto3.client('sts')
 
@@ -49,7 +49,7 @@ class EC2Manager:
 
         except Exception as e:
             print(f"❌ Could not fetch AMI {ami_name} from SSM: {str(e)}")
-            return None
+            return
 
 
 
@@ -62,7 +62,7 @@ class EC2Manager:
     def is_quota_available(self):
         print("Checking instances created by Nadav-Platform-CLI...")
         # Filtering for instances with the specific tag AND that are not terminated
-        instances = self.resource.instances.filter(
+        response = self.client.describe_instances(
             Filters=[
                 {
                     'Name': 'tag:CreatedBy',
@@ -74,7 +74,11 @@ class EC2Manager:
                 }
             ]
         )
-        count = len(list(instances))
+        
+        count = 0
+        for reservation in response.get('Reservations', []):
+            count += len(reservation.get('Instances', []))
+
         print(f"Found {count} instances.")
         
         if count >= self.LIMIT:
@@ -84,10 +88,10 @@ class EC2Manager:
     def create_instance(self, ami_input, instance_type_input, instance_name_input):
         # Validating the parameters
         self._validate_inputs(instance_type_input, ami_input)
-
+        
+        # Get the aws user name
         try:
-            identity = self.sts.get_caller_identity()
-            # Get the aws user name
+            identity = self.sts.get_caller_identity()    
             aws_user = identity['Arn'].split('/')[-1]
         except Exception as e:
             print(f"⚠️ Warning: Could not detect AWS user, using 'unknown'. Error: {e}")
@@ -95,7 +99,7 @@ class EC2Manager:
 
         # Get the ami id
         ami_id = self.get_latest_ami_id(ami_input)
-        # If coudn't manage to get the ami id:
+        # If couldn't manage to get the ami id:
         if not ami_id:
             return
 
@@ -105,9 +109,10 @@ class EC2Manager:
             return
 
         # Creation of the instance:
+        # Creation of the instance:
         try: 
             with progress_spinner("Creating instance..."):
-                instances = self.resource.create_instances(
+                response = self.client.run_instances(
                     ImageId = ami_id,
                     InstanceType = instance_type_input,
                     KeyName = self.KEY_NAME,
@@ -125,13 +130,14 @@ class EC2Manager:
                     MinCount=1,
                     MaxCount=1
                 )
-                new_instance = instances[0]
+                new_instance_id = response['Instances'][0]['InstanceId']
             
             with progress_spinner("Waiting for instance to be running..."):
-                new_instance.wait_until_running()
+                waiter = self.client.get_waiter('instance_running')
+                waiter.wait(InstanceIds=[new_instance_id])
             
             print("✅ Instance is up and running!")
-            return(f"Instance Id: {new_instance.id}")
+            return(f"Instance Id: {new_instance_id}")
         
 
         except Exception as e:
