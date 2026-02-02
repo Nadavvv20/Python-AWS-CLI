@@ -6,7 +6,9 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.ui_helpers import progress_spinner
-
+from rich.console import Console
+console = Console()
+console.print(":cloud: [bold blue]Connecting to AWS...[/bold blue]")
 # Accessing the EC2 service in us-east-1 region
 # Accessing the EC2 service in us-east-1 region
 ec2 = boto3.client('ec2', region_name='us-east-1')
@@ -57,5 +59,3 @@ def change_instance_state(instance_id, action):
         print("❌ Error: This instance doesn't have the right tag or is terminated")
         return
 
-if __name__ == "__main__":
-    change_instance_state("i-02f2fd9e62ef03d8e", "stop")

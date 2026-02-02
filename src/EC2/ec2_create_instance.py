@@ -4,7 +4,9 @@ import sys
 # Add parent directory to path to import utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.ui_helpers import progress_spinner
-
+from rich.console import Console
+console = Console()
+console.print(":cloud: [bold blue]Connecting to AWS...[/bold blue]")
 
 # Creating the EC2 create command
 class EC2Creator:
