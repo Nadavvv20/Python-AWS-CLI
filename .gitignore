@@ -10,5 +10,6 @@ __pycache__/
 # AWS credentials
 .aws/credentials
 .aws/config
+.aws
 
 .vscode

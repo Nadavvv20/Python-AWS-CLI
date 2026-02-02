@@ -11,7 +11,7 @@ class EC2Manager:
 
         # Amis list
         self.ALLOWED_AMIS = {
-            "ubuntu" : "/aws/service/canonical/ubuntu/server/22.04/stable/current/amd64/hvm/ebs-gp2/ami_id",
+            "ubuntu" : "/aws/service/canonical/ubuntu/server/24.04/stable/current/arm64/hvm/ebs-gp3/ami-id",
             "amazon-linux" : "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
         }
 
@@ -41,16 +41,16 @@ class EC2Manager:
             return ami_id
 
         except Exception as e:
-            print(f"❌ Could not fetch AMI from SSM: {str(e)}")
+            print(f"❌ Could not fetch AMI {ami_name} from SSM: {str(e)}")
             return None
 
 
 
     def _validate_inputs(self, instance_type, ami):
         if ami not in self.ALLOWED_AMIS:
-            raise ValueError(f"This AMI is not valid - You can choose: {list(self.ALLOWED_AMIS.keys())}")
+            raise ValueError(f"❌ This AMI is not valid - You can choose: {list(self.ALLOWED_AMIS.keys())}")
         if instance_type not in self.ALLOWED_TYPES:
-            raise ValueError(f"This type is not valid - You are allowed to create only {self.ALLOWED_TYPES[0]} or {self.ALLOWED_TYPES[1]}")
+            raise ValueError(f"❌ This type is not valid - You are allowed to create only {self.ALLOWED_TYPES[0]} or {self.ALLOWED_TYPES[1]}")
 
     def is_quota_available(self):
         print("Checking instances created by Nadav-platform-cli...")
@@ -74,7 +74,7 @@ class EC2Manager:
             return False
         return True
 
-    def create_instance(self, instance_type_input, ami_input, instance_name_input):
+    def create_instance(self, ami_input, instance_type_input, instance_name_input):
         # Validating the parameters
         self._validate_inputs(instance_type_input, ami_input)
 
@@ -110,7 +110,7 @@ class EC2Manager:
                         'ResourceType': 'instance',
                         'Tags': [
                             {'Key': 'Name', 'Value': instance_name_input},
-                            {'Key': 'CreatedBy', 'Value': 'Nadav-platform-cli'},
+                            {'Key': 'CreatedBy', 'Value': 'Nadav-Platform-CLI'},
                             {'Key': 'Owner', 'Value': aws_user},
                         ]
                     }
@@ -122,7 +122,8 @@ class EC2Manager:
             print("⏳ Waiting for instance to be running...")
             new_instance.wait_until_running()
             print("✅ Instance is up and running!")
-            print(f"Instance Id: {new_instance.id}")
+            return(f"Instance Id: {new_instance.id}")
+        
 
         except Exception as e:
             print(f"An error occured: {e}")
