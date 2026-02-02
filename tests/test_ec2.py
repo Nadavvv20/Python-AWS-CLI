@@ -5,8 +5,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # 2. Importing the class
-from src.EC2.ec2_create_instance import EC2Creator
-from src.EC2.change_instance_state import change_instance_state
+from src.EC2 import EC2Creator
+from src.EC2 import change_instance_state
 
 
 def run_manual_tests():
@@ -31,7 +31,6 @@ def run_manual_tests():
     else:
         print("⚠️  Quota reached or check failed.")
 
-    # בדיקת יצירה (מושבת כברירת מחדל)
     print("\nTesting Instance Creation...")
     new_instance_id = creator.create_instance("amazon-linux", "t3.micro", "Nadav-Test-Instance")
     print(new_instance_id)

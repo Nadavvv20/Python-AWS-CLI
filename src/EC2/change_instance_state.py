@@ -50,6 +50,3 @@ def change_instance_state(instance_id, action):
         return
 
 
-if __name__ == "__main__":
-    change_instance_state("i-02f2fd9e62ef03d8e", "start")
-
