@@ -8,6 +8,7 @@ awsctl.egg-info/entry_points.txt
 awsctl.egg-info/requires.txt
 awsctl.egg-info/top_level.txt
 src/__init__.py
+src/cli.py
 src/EC2/__init__.py
 src/EC2/change_instance_state.py
 src/EC2/ec2_create_instance.py

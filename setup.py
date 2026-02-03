@@ -13,7 +13,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'awsctl = main:cli', 
+            'awsctl = src.cli:main_cli', 
         ],
     },
 )
