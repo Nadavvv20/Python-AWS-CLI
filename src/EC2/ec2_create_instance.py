@@ -5,7 +5,6 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.ui_helpers import progress_spinner
 from rich.console import Console
-from src.utils.aws_identity import get_aws_user
 console = Console()
 console.print(":cloud: [bold blue]Connecting to AWS...[/bold blue]")
 
@@ -91,7 +90,12 @@ class EC2Creator:
         self._validate_inputs(instance_type_input, ami_input)
         
         # Get the aws user name
-        aws_user = get_aws_user()
+        try:
+            identity = self.sts.get_caller_identity()    
+            aws_user = identity['Arn'].split('/')[-1]
+        except Exception as e:
+            print(f"⚠️ Warning: Could not detect AWS user, using 'unknown'. Error: {e}")
+            aws_user = "unknown"
 
         # Get the ami id
         ami_id = self.get_latest_ami_id(ami_input)
