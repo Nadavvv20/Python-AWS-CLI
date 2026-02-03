@@ -33,6 +33,4 @@ def list_instances():
         if not instances:
             console.print("[yellow]⚠️  No instances found matching your criteria (Tag: CreatedBy=Nadav-Platform-CLI).[/yellow]")
             return
-
-
-    
+            
