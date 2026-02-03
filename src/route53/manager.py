@@ -119,3 +119,58 @@ def manage_dns_record(zone_id, action, record_name, record_type, value):
     except Exception as e:
         console.print(f"[bold red]❌ Route53 Error:[/bold red] {e}")
         return False
+
+def cleanup_dns_resources():
+    r53 = boto3.client('route53')
+    try:
+        # 1. Get all the Hosted Zones
+        zones_response = r53.list_hosted_zones()
+        found_any = False
+        
+        from src.utils.helpers import progress_spinner
+        
+        with progress_spinner("Checking Route53 resources for cleanup..."):
+            for zone in zones_response.get('HostedZones', []):
+                zone_id = zone['Id'].split('/')[-1]
+                
+                # Check tags
+                try:
+                    tag_response = r53.list_tags_for_resource(
+                        ResourceType='hostedzone',
+                        ResourceId=zone_id
+                    )
+                    tags = {t['Key']: t['Value'] for t in tag_response['ResourceTagSet']['Tags']}
+                    
+                    if tags.get('CreatedBy') == 'Nadav-Platform-CLI':
+                        found_any = True
+                        console.print(f"  🗑️  Found platform zone: [cyan]{zone['Name']}[/cyan] ({zone_id})")
+                        
+                        # Delete records first
+                        records = r53.list_resource_record_sets(HostedZoneId=zone_id)
+                        changes = []
+                        for record in records['ResourceRecordSets']:
+                            if record['Type'] not in ['NS', 'SOA']:
+                                changes.append({
+                                    'Action': 'DELETE',
+                                    'ResourceRecordSet': record
+                                })
+                        
+                        if changes:
+                             r53.change_resource_record_sets(
+                                 HostedZoneId=zone_id,
+                                 ChangeBatch={'Changes': changes}
+                             )
+                             console.print(f"     ✅ Deleted {len(changes)} records.")
+
+                        # Delete zone
+                        r53.delete_hosted_zone(Id=zone_id)
+                        console.print(f"     ✅ Deleted Hosted Zone.")
+                        
+                except Exception as e:
+                    console.print(f"  ❌ Error checking/deleting zone {zone_id}: {e}")
+
+        if not found_any:
+            console.print("[green]✨ No platform Route53 zones found to clean.[/green]")
+
+    except Exception as e:
+        console.print(f"[bold red]❌ Error during Route53 cleanup:[/bold red] {e}")
