@@ -206,3 +206,43 @@ class EC2Creator:
 
         except Exception as e:
             print(f"An error occured: {e}")
+
+def cleanup_ec2_resources():
+    ec2 = boto3.client('ec2', region_name='us-east-1')
+    try:
+        # Find instances
+        response = ec2.describe_instances(
+            Filters=[
+                {
+                    'Name': 'tag:CreatedBy',
+                    'Values': ['Nadav-Platform-CLI']
+                },
+                {
+                    'Name': 'instance-state-name',
+                    'Values': ['running', 'pending', 'stopping', 'stopped']
+                }
+            ]
+        )
+        
+        instance_ids = []
+        for reservation in response.get('Reservations', []):
+            for instance in reservation.get('Instances', []):
+                instance_ids.append(instance['InstanceId'])
+        
+        if not instance_ids:
+            console.print("[green]✨ No platform EC2 instances found to clean.[/green]")
+            return
+
+        console.print(f"[yellow]🗑️  Found {len(instance_ids)} instances to clean: {', '.join(instance_ids)}[/yellow]")
+        
+        # Terminate
+        ec2.terminate_instances(InstanceIds=instance_ids)
+        
+        with progress_spinner(f"Terminating {len(instance_ids)} instances..."):
+            waiter = ec2.get_waiter('instance_terminated')
+            waiter.wait(InstanceIds=instance_ids)
+            
+        console.print(f"[green]✅ Successfully terminated {len(instance_ids)} instances.[/green]")
+
+    except Exception as e:
+        console.print(f"[bold red]❌ Error during EC2 cleanup:[/bold red] {e}")
