@@ -4,7 +4,7 @@ import sys
 # Add parent directory to path to import utils
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.ui_helpers import progress_spinner
+from utils.ui_helper import progress_spinner
 from rich.console import Console
 console = Console()
 
@@ -34,5 +34,6 @@ def list_instances():
             console.print("[yellow]⚠️  No instances found matching your criteria (Tag: CreatedBy=Nadav-Platform-CLI).[/yellow]")
             return
 
-
-    
+if __name__ == "__main__":
+    list_instances()
+            
