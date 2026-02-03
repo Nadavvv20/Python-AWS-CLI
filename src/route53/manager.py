@@ -67,7 +67,7 @@ def list_my_dns():
                     else:
                         value_str = "No Value"
 
-                    console.print(f"  [yellow]•[/yellow] [bold]{record['Name']}[/bold] [{record['Type']}] -> {value_str}")
+                    console.print(f"  [yellow]•[/yellow] [bold]{record['Name']}[/bold] [cyan][{record['Type']}][/cyan] -> {value_str}")
 
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/bold red] {e}")
