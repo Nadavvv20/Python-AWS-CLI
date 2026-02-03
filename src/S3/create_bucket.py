@@ -3,7 +3,7 @@ from src.utils.ui_helper import console
 from src.utils.aws_identity import get_aws_user
 
 current_user = get_aws_user()
-my_tags = {"CreatedBy": "Nadav", "Owner": current_user}
+my_tags = {"CreatedBy": "Nadav-Platform-CLI", "Owner": current_user}
 def create_bucket(bucket_name, region = 'us-east-1', is_public = False):
     try:
         bucket_config = {}
