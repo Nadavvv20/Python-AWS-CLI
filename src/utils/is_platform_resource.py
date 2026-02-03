@@ -13,5 +13,4 @@ def is_platform_resource(bucket_name):
         return tag_set.get('CreatedBy') == 'Nadav-Platform-CLI'
         
     except Exception:
-        console.print(f"[bold red]❌ Access Denied:[/bold red] Bucket '{bucket_name}' has no tags.")
         return False
