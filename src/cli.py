@@ -1,13 +1,7 @@
-from src.S3.list_buckets import list_buckets
 import click
-from src.utils.ui_helper import console
-from src.EC2.list_instances import list_instances
-from src.EC2.ec2_create_instance import EC2Creator
-from src.S3.create_bucket import create_bucket
-from src.S3.upload_files import upload_files
-from src.Route53.create_zones import create_hosted_zones
-from src.Route53.List_Zones_and_Records import list_my_dns
-from src.Route53.Manage_Records import manage_dns_record
+from src.ec2.manager import list_instances, EC2Creator
+from src.s3.manager import create_bucket, upload_files, list_buckets
+from src.route53.manager import create_hosted_zones, list_my_dns, manage_dns_record
 
 @click.group()
 def main_cli():

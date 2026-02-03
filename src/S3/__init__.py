@@ -1,1 +1,1 @@
-from src.utils.is_platform_resource import is_platform_resource
+# S3 package initialized

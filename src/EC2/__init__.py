@@ -1,2 +1,1 @@
-from .ec2_create_instance import EC2Creator
-from .change_instance_state import change_instance_state
+# EC2 package initialized
