@@ -9,6 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.S3.create_bucket import create_bucket
 from src.S3.upload_files import upload_files
+from src.S3.list_buckets import list_buckets
 
 def test_s3_flow():
     # 1. Setup
@@ -41,7 +42,8 @@ def test_s3_flow():
             print("\n✅ TEST PASSED: Bucket created and file uploaded successfully.")
         else:
             print("\n❌ TEST FAILED: File upload returned False.")
-
+        print("Listing buckets:")
+        list_buckets()
     finally:
         # 4. Cleanup
         print("\n--- Cleaning up resources ---")

@@ -1,7 +1,6 @@
 import boto3
 import sys
 import os
-
 # Add project root to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -17,7 +16,7 @@ def list_buckets():
     # If at least 1 bucket was found, this will be changed to 'True'
     bucket_found = False
 
-    with progress_spinner("Listing Buckets made by CLI Platform, this might take a few seconds..."):
+    with progress_spinner("Listing Buckets made with the CLI Platform, \n     this might take a few seconds..."):
         for bucket in response['Buckets']:
             if is_platform_resource(bucket["Name"]):
                 print(f'  {bucket["Name"]}')
