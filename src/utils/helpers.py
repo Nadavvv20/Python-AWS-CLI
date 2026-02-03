@@ -1,6 +1,17 @@
 import boto3
 from rich.console import Console
+from contextlib import contextmanager
+
 console = Console()
+
+def get_aws_user():
+    # Get the name of the current AWS user
+    sts = boto3.client('sts')
+    try:
+        identity = sts.get_caller_identity()
+        return identity['Arn'].split('/')[-1]
+    except Exception:
+        return "Unknown-User"
 
 def is_platform_resource(bucket_name):
     s3_client = boto3.client('s3')
@@ -14,3 +25,8 @@ def is_platform_resource(bucket_name):
         
     except Exception:
         return False
+
+@contextmanager
+def progress_spinner(message="Working..."):
+    with console.status(f"[bold blue]⏳ {message}", spinner="dots"):
+        yield

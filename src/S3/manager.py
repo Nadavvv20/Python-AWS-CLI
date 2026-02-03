@@ -1,9 +1,10 @@
 import boto3
-from src.utils.ui_helper import console
-from src.utils.aws_identity import get_aws_user
+import os
+from src.utils.helpers import console, progress_spinner, get_aws_user, is_platform_resource
 
 current_user = get_aws_user()
 my_tags = {"CreatedBy": "Nadav-Platform-CLI", "Owner": current_user}
+
 def create_bucket(bucket_name, region = 'us-east-1', is_public = False):
     try:
         bucket_config = {}
@@ -47,4 +48,41 @@ def create_bucket(bucket_name, region = 'us-east-1', is_public = False):
         return True
     except Exception as e:
         console.print(f"[bold red]❌ Error in creating a bucket:[/bold red] {e}")
+        return False
+
+def list_buckets():
+
+    s3 = boto3.client('s3')
+    response = s3.list_buckets()
+    
+    # This variable indicates whether there are buckets that was made by Nadav-Platform-CLI or not.
+    # If at least 1 bucket was found, this will be changed to 'True'
+    bucket_found = False
+
+    with progress_spinner("Listing Buckets made with the CLI Platform, \n     this might take a few seconds..."):
+        for bucket in response['Buckets']:
+            if is_platform_resource(bucket["Name"]):
+                print(f'  {bucket["Name"]}')
+                bucket_found = True
+    if not bucket_found:
+        print("No buckets were found.")
+
+def upload_files(file_name, bucket_name, object_name=None):
+    # Check if the bucket is made by the CLI platform
+    if not is_platform_resource(bucket_name):
+        console.print(f"[bold red]❌ Access Denied:[/bold red] Bucket '{bucket_name}' does not have the required platform tags.")
+        return False
+
+     # If S3 object_name was not specified, use file_name
+    if object_name is None:
+        object_name = os.path.basename(file_name)
+
+    s3_client = boto3.client('s3')
+    try:
+        with console.status(f"[bold green]Uploading {file_name} to {bucket_name}...[/bold green]"):
+            s3_client.upload_file(file_name, bucket_name, object_name)
+        console.print(f"✅ File uploaded successfully to [blue]{bucket_name}[/blue]")
+        return True
+    except Exception as e:
+        console.print(f"[bold red]❌ Upload failed:[/bold red] {e}")
         return False

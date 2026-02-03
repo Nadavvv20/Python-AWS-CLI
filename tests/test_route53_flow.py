@@ -7,10 +7,8 @@ import boto3
 # Add project root to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.Route53.create_zones import create_hosted_zones
-from src.Route53.Manage_Records import manage_dns_record
-from src.Route53.List_Zones_and_Records import list_my_dns
-from src.utils.ui_helper import console
+from src.route53.manager import create_hosted_zones, manage_dns_record, list_my_dns
+from src.utils.helpers import console
 
 def wait_for_change(route53_client, change_id):
     """Wait for a Route53 change to complete"""
@@ -61,8 +59,8 @@ def test_route53_flow():
              print("❌ Failed to add record. Aborting.")
              return
         
-        print("   Waiting 30 seconds for record propagation...")
-        time.sleep(30)
+        print("   Waiting 5 seconds for record propagation...")
+        time.sleep(5)
 
         # 3. List
         print(f"\n3️⃣  Listing Zones and Records (Should see {domain_name})")

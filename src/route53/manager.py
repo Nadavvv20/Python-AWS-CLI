@@ -1,0 +1,121 @@
+import boto3
+from src.utils.helpers import console, get_aws_user
+
+current_user = get_aws_user()
+
+def create_hosted_zones(domain_name):
+    route53_client = boto3.client('route53')
+
+    # Create the Hosted Zone
+    try:
+        response = route53_client.create_hosted_zone(
+            Name=domain_name,
+            CallerReference=str(hash(domain_name))
+        )
+
+        # Get the id
+        zone_id = response['HostedZone']['Id']
+        clean_zone_id = zone_id.split('/')[-1]
+        console.print(f"[green]✅ Hosted Zone created for {domain_name} (ID: {clean_zone_id})[/green]")
+
+        # Add tags
+        route53_client.change_tags_for_resource(
+                ResourceType='hostedzone',
+                ResourceId=clean_zone_id,
+                AddTags=[
+                    {'Key': 'CreatedBy', 'Value': 'Nadav-Platform-CLI'},
+                    {'Key': 'Owner', 'Value': current_user}
+                ]
+            )
+        return clean_zone_id
+
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/bold red] {e}")
+        return None
+
+def list_my_dns():
+    r53 = boto3.client('route53')
+    
+    try:
+        # 1. Get all the Hosted Zones
+        zones_response = r53.list_hosted_zones()
+        
+        for zone in zones_response.get('HostedZones', []):
+            zone_id = zone['Id'].split('/')[-1]
+            
+            # Check the tags for current zone
+            tag_response = r53.list_tags_for_resource(
+                ResourceType='hostedzone',
+                ResourceId=zone_id
+            )
+            
+            tags = {t['Key']: t['Value'] for t in tag_response['ResourceTagSet']['Tags']}
+            
+            # Condition only if the tag is correct
+            if tags.get('CreatedBy') == 'Nadav-Platform-CLI':
+                console.print(f"\n[bold cyan]📍 Hosted Zone: {zone['Name']} ({zone_id})[/bold cyan]")
+                
+                # List the records of the current zone
+                records = r53.list_resource_record_sets(HostedZoneId=zone_id)
+                
+                for record in records.get('ResourceRecordSets', []):
+                    if 'ResourceRecords' in record:
+                        values = [r['Value'] for r in record['ResourceRecords']]
+                        value_str = ", ".join(values)
+                    elif 'AliasTarget' in record:
+                        value_str = f"Alias -> {record['AliasTarget']['DNSName']}"
+                    else:
+                        value_str = "No Value"
+
+                    console.print(f"  [yellow]•[/yellow] [bold]{record['Name']}[/bold] [{record['Type']}] -> {value_str}")
+
+    except Exception as e:
+        console.print(f"[bold red]❌ Error:[/bold red] {e}")
+
+def manage_dns_record(zone_id, action, record_name, record_type, value):
+  
+    route53_client = boto3.client('route53')
+    
+    clean_zone_id = zone_id.split('/')[-1]
+
+    try:
+        # 2Check the 
+        tag_response = route53_client.list_tags_for_resource(
+            ResourceType='hostedzone',
+            ResourceId=clean_zone_id
+        )
+        
+        tags = {t['Key']: t['Value'] for t in tag_response['ResourceTagSet']['Tags']}
+        # Check the tag
+        if tags.get('CreatedBy') != 'Nadav-Platform-CLI':
+            console.print(f"[bold red]❌ Access Denied:[/bold red] Zone {clean_zone_id} is not managed by this CLI.")
+            return False
+
+        # Record Request 
+        change_batch = {
+            'Comment': f'Managed by Nadav-Platform-CLI',
+            'Changes': [
+                {
+                    'Action': action.upper(),
+                    'ResourceRecordSet': {
+                        'Name': record_name,
+                        'Type': record_type, 
+                        'TTL': 300,
+                        'ResourceRecords': [{'Value': value}]
+                    }
+                }
+            ]
+        }
+
+        # Change in AWS
+        response = route53_client.change_resource_record_sets(
+            HostedZoneId=clean_zone_id,
+            ChangeBatch=change_batch
+        )
+        
+        console.print(f"[green]✅ DNS {action} successful for {record_name}![/green]")
+        return True
+
+    except Exception as e:
+        console.print(f"[bold red]❌ Route53 Error:[/bold red] {e}")
+        return False

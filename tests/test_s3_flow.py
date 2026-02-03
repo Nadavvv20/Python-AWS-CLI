@@ -7,9 +7,7 @@ import boto3
 # Add project root to sys.path so we can import src modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.S3.create_bucket import create_bucket
-from src.S3.upload_files import upload_files
-from src.S3.list_buckets import list_buckets
+from src.s3.manager import create_bucket, upload_files, list_buckets
 
 def test_s3_flow():
     # 1. Setup
