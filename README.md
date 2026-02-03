@@ -1,1 +1,144 @@
-# Python-AWS-CLI
+# ☁️ AWS Platform CLI (awsctl)
+
+**Platform Engineering Self-Service Tool**
+
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![AWS SDK](https://img.shields.io/badge/AWS-Boto3-orange.svg)](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
+[![Status](https://img.shields.io/badge/Status-Educational-green.svg)]()
+
+## 📖 Overview
+**awsctl** is a Python-based Command Line Interface (CLI) designed to enable developers to provision AWS resources (EC2, S3, Route53) independently.
+
+This tool acts as a **Platform Engineering Guardrail**, ensuring that all resources are created within safe, pre-defined standards. It enforces strict constraints (such as instance types and capacity limits) and abstracts complex AWS API calls into simple, intuitive commands.
+
+---
+
+## 📂 Project Structure
+The project follows a modular and professional package structure:
+
+```text
+Python-AWS-CLI/
+├── src/
+│   ├── __init__.py
+│   ├── cli.py                  # Main CLI logic (Click groups & commands)
+│   ├── ec2/
+│   │   ├── __init__.py
+│   │   └── manager.py          # EC2 Logic (Constraints, AMI lookup, Lifecycle)
+│   ├── s3/
+│   │   ├── __init__.py
+│   │   └── manager.py          # S3 Logic (Security checks, Uploads, List)
+│   ├── route53/
+│   │   ├── __init__.py
+│   │   └── manager.py          # Route53 Logic (Zones, Records filtering)
+│   └── utils/
+│       ├── __init__.py
+│       ├── aws_identity.py     # Identity helpers (STS/IAM)
+│       └── ui_helper.py        # Rich-based console output
+├── tests/                      # Unit & Integration tests
+├── .gitignore
+├── README.md                   # Documentation
+├── requirements.txt            # Project dependencies
+├── setup.py                    # Package installation config
+└── main.py                     # Entry point script
+```
+## ⚙️ Prerequisites
+Before installation, ensure you have:
+* **Python 3.9+** installed. 
+* **AWS CLI** installed and configured. 
+    ```bash
+    aws configure
+    ```
+* **Note:** Your IAM user must have permissions to manage EC2, S3, and Route53. 
+
+---
+
+## 🚀 Installation
+
+1. **Clone the repository:**
+    ```bash
+    git clone [https://github.com/your-username/awsctl.git](https://github.com/your-username/awsctl.git)
+    cd awsctl
+    ```
+
+2. **Set up a Virtual Environment:**
+    ```bash
+    python -m venv .venv
+    # Windows:
+    .venv\Scripts\activate
+    # Mac/Linux:
+    source .venv/bin/activate
+    ```
+
+3. **Install the tool in editable mode:** 
+    ```bash
+    pip install -e .
+    ```
+
+---
+
+## 🏷️ Tagging & Security Guardrails
+The tool enforces organizational standards automatically: 
+* **Consistent Tagging:** Every resource includes `CreatedBy=Nadav-Platform-CLI`, `Owner=<Current_User>` and `Environment`. 
+* **EC2 Constraints:** 
+    * Restricted to `t3.micro` or `t2.small`. 
+    * **Hard Cap:** Maximum of 2 running instances created by the CLI allowed simultaneously. 
+* **S3 Security:** Public buckets require explicit user confirmation (**Are you sure?**). 
+* **Scoped Access:** The tool only operates on resources it created (verified by tags). 
+
+---
+
+## 🛠️ Command Reference Summary
+
+### EC2 Commands (`awsctl ec2`)
+| Command | Options | Description |
+| :--- | :--- | :--- |
+| `create` | `--name`, `--ami`, `--type` | Creates a tagged instance (enforces 2-instance cap). |
+| `list` | - | Lists all CLI-created instances and their status. |
+| `cleanup` | - | Terminates all instances managed by the CLI. |
+
+### S3 Commands (`awsctl s3`)
+| Command | Options | Description |
+| :--- | :--- | :--- |
+| `create` | `--name`, `--public/--private` | Creates a bucket (Public requires confirmation). |
+| `upload` | `--bucket`, `--file`, `--key` | Uploads a file to a CLI-managed bucket. |
+| `list` | - | Lists all CLI-created buckets. |
+| `cleanup` | - | Deletes all buckets managed by the CLI. |
+
+### DNS Commands (`awsctl dns`)
+| Command | Arguments/Options | Description |
+| :--- | :--- | :--- |
+| `create-zone` | `domain_name` | Creates a new Route53 Hosted Zone. |
+| `record` | `zone_id`, `action`, `--name`, `--type`, `--value` | Manages DNS records (UPSERT/DELETE). |
+| `list` | - | Lists all CLI-created zones and their records. |
+| `cleanup` | - | Deletes all Hosted Zones managed by the CLI. |
+
+---
+
+## 📖 Detailed Usage Examples
+
+### Compute (EC2)
+Create a server with automatic AMI lookup: 
+```bash
+awsctl ec2 create --name dev-app --ami ubuntu --type t3.micro
+```
+### Storage (S3)
+Upload a file to a secure bucket: 
+```bash
+awsctl s3 upload --bucket my-cli-bucket --file data.json --key backups/data.json
+```
+### Network (Route53) 
+Add an A record to your zone: 
+```bash
+awsctl dns record Z0123456789 UPSERT --name api.example.com --type A --value 1.2.3.4
+```
+### 🧹 Cleanup
+
+To avoid AWS costs, remove all resources created during your session:
+
+```bash
+awsctl ec2 cleanup
+awsctl s3 cleanup
+awsctl dns cleanup
+```
+---
+Developed by Nadav Kamar | DevOps Engineer
