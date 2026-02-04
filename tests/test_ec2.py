@@ -1,45 +1,65 @@
 import sys
 import os
+import time
 
 # 1. Add the parent folder to the path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # 2. Importing the class
-from src.EC2 import EC2Creator
-from src.EC2 import change_instance_state
+from src.ec2.manager import EC2Creator, change_instance_state, cleanup_ec2_resources, list_instances
+from src.utils.helpers import console
 
-
-def run_manual_tests():
+def run_integration_tests():
     creator = EC2Creator()
-    
-    print("--- Starting Manual Testing from /tests folder ---")
+    console.print("[bold blue]--- Starting EC2 Integration Test ---[/bold blue]")
 
-    # AMI Check
-    print("\nTesting AMI Resolution:")
-    ubuntu_ami = creator.get_latest_ami_id("ubuntu")
-    amazon_ami = creator.get_latest_ami_id("amazon-linux")
-    
-    if ubuntu_ami:
-        print(f"✅ Ubuntu AMI: {ubuntu_ami}")
-    if amazon_ami:
-        print(f"✅ Amazon Linux AMI: {amazon_ami}")
+    try:
+        # AMI Check
+        console.print("\n[bold]1. Testing AMI Resolution:[/bold]")
+        ubuntu_ami = creator.get_latest_ami_id("ubuntu")
+        if ubuntu_ami:
+            console.print(f"   ✅ Ubuntu AMI resolved: {ubuntu_ami}")
+        else:
+            raise Exception("Failed to resolve Ubuntu AMI")
 
-    # בדיקת המכסה (Quota)
-    print("\nTesting Quota Check:")
-    if creator.is_quota_available():
-        print("✅ Quota check passed.")
-    else:
-        print("⚠️  Quota reached or check failed.")
+        # Quota Check
+        console.print("\n[bold]2. Testing Quota Check:[/bold]")
+        if creator.is_quota_available():
+            console.print("   ✅ Quota check passed.")
+        else:
+            console.print("   ⚠️  Quota reached (this might be expected if other instances exist).")
 
-    print("\nTesting Instance Creation...")
-    new_instance_id = creator.create_instance("amazon-linux", "t3.micro", "Nadav-Test-Instance")
-    print(new_instance_id)
+        # Create Instance
+        console.print("\n[bold]3. Testing Instance Creation...[/bold]")
+        instance_name = "Test-Auto-Instance"
+        result_msg = creator.create_instance("amazon-linux", "t3.micro", instance_name)
+        
+        if not result_msg:
+             raise Exception("Instance creation returned None.")
+        
+        # Extract ID (The function returns "Instance Id: i-xxxx")
+        new_instance_id = result_msg.split(": ")[1].strip()
+        console.print(f"   ✅ Instance Created: [cyan]{new_instance_id}[/cyan]")
+        
+        # List
+        console.print("\n[bold]4. Testing List Instances...[/bold]")
+        list_instances()
 
-    print(f"\n🔄 Step 2: Testing instance STOP for {new_instance_id}")
-    change_instance_state(new_instance_id, "stop")
+        # Stop Instance
+        console.print(f"\n[bold]5. Testing Stop Instance {new_instance_id}...[/bold]")
+        change_instance_state(new_instance_id, "stop")
+        
+        # Start Instance (Optional, but good to test)
+        console.print(f"\n[bold]6. Testing Start Instance {new_instance_id}...[/bold]")
+        change_instance_state(new_instance_id, "start")
 
-    
-    print("\n--- Testing Finished ---")
+        console.print("\n[bold green]✅ EC2 Flow Test Passed Successfully.[/bold green]")
+
+    except Exception as e:
+        console.print(f"\n[bold red]❌ Test Failed:[/bold red] {e}")
+    finally:
+        console.print("\n[bold]7. Cleanup Phase...[/bold]")
+        cleanup_ec2_resources()
 
 if __name__ == "__main__":
-    run_manual_tests()
+    run_integration_tests()
