@@ -82,7 +82,8 @@ The tool enforces organizational standards automatically:
 * **EC2 Constraints:** 
     * Restricted to `t3.micro` or `t2.small`. 
     * **Hard Cap:** Maximum of 2 running instances created by the CLI allowed simultaneously. 
-* **S3 Security:** Public buckets require explicit user confirmation (**Are you sure?**). 
+* **S3 Security:** Public buckets require explicit user confirmation (**Are you sure?**).
+* **S3 Encryption:** Every bucket created via the CLI, is configured with default encryption (SSE-S3).
 * **Scoped Access:** The tool only operates on resources it created (verified by tags). 
 
 ---
