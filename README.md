@@ -127,7 +127,7 @@ Upload a file to a secure bucket:
 ```bash
 awsctl s3 upload --bucket my-cli-bucket --file data.json --key backups/data.json
 ```
-### Network (Route53) 
+### DNS (Route53) 
 Add an A record to your zone: 
 ```bash
 awsctl dns record Z0123456789 UPSERT --name api.example.com --type A --value 1.2.3.4
