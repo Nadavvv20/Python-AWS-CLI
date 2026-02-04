@@ -3,6 +3,7 @@ from src.ec2.manager import list_instances, EC2Creator, cleanup_ec2_resources
 from src.s3.manager import create_bucket, upload_files, list_buckets, cleanup_s3_resources
 from src.route53.manager import create_hosted_zones, list_my_dns, manage_dns_record, cleanup_dns_resources
 
+
 @click.group()
 def main_cli():
     """AWS Control CLI - Nadav's Platform Tool"""
