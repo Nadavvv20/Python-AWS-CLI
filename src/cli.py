@@ -7,6 +7,7 @@ from src.route53.manager import create_hosted_zones, list_my_dns, manage_dns_rec
 @click.group()
 def main_cli():
     """AWS Control CLI - Nadav's Platform Tool"""
+    
     pass
 
 # --- EC2 Group ---

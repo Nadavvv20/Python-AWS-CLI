@@ -1,7 +1,7 @@
-import pyfiglet
 from rich.console import Console
 from rich.panel import Panel
 import time
+import pyfiglet
 
 def run_welcome():
     console = Console()

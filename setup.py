@@ -7,7 +7,6 @@ import sys
 def show_banner():
     """Runs welcome script"""
     try:
-
         subprocess.check_call([sys.executable, "post_install.py"])
     except Exception:
         pass 
@@ -34,6 +33,6 @@ setup(
         ],
     },
     cmdclass={
-        'develop': PostDevelopCommand, # מפעיל את הבאנר בהתקנה במצב פיתוח
+        'develop': PostDevelopCommand
     },
 )
