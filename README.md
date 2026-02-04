@@ -82,7 +82,8 @@ The tool enforces organizational standards automatically:
 * **EC2 Constraints:** 
     * Restricted to `t3.micro` or `t2.small`. 
     * **Hard Cap:** Maximum of 2 running instances created by the CLI allowed simultaneously. 
-* **S3 Security:** Public buckets require explicit user confirmation (**Are you sure?**). 
+* **S3 Security:** Public buckets require explicit user confirmation (**Are you sure?**).
+* **S3 Encryption:** Every bucket created via the CLI, is configured with default encryption (SSE-S3).
 * **Scoped Access:** The tool only operates on resources it created (verified by tags). 
 
 ---
@@ -126,7 +127,7 @@ Upload a file to a secure bucket:
 ```bash
 awsctl s3 upload --bucket my-cli-bucket --file data.json --key backups/data.json
 ```
-### Network (Route53) 
+### DNS (Route53) 
 Add an A record to your zone: 
 ```bash
 awsctl dns record Z0123456789 UPSERT --name api.example.com --type A --value 1.2.3.4
