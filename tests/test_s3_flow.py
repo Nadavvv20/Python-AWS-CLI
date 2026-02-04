@@ -7,7 +7,8 @@ import boto3
 # Add project root to sys.path so we can import src modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.s3.manager import create_bucket, upload_files, list_buckets
+from src.s3.manager import create_bucket, upload_files, list_buckets, cleanup_s3_resources
+from src.utils.helpers import console
 
 def test_s3_flow():
     # 1. Setup
@@ -19,48 +20,49 @@ def test_s3_flow():
     with open(file_name, "w") as f:
         f.write(file_content)
         
+    console.print(f"[bold blue]--- Starting S3 Flow Test for {bucket_name} ---[/bold blue]")
+
     try:
         # 2. Create Bucket
-        print(f"\n--- Testing Create Bucket: {bucket_name} ---")
+        console.print(f"\n[bold]1. Testing Create Bucket: {bucket_name}[/bold]")
         # create_bucket(bucket_name, region, is_public) - defaults are fine
         created = create_bucket(bucket_name)
         
         if not created:
-            print("❌ Create bucket returned False. Stopping test.")
-            return
-
-        print("Waiting for consistency...")
+            raise Exception("Create bucket returned False.")
+        
+        console.print("   Waiting for consistency...")
         time.sleep(2)
 
         # 3. Upload File
-        print(f"\n--- Testing Upload File: {file_name} ---")
+        console.print(f"\n[bold]2. Testing Upload File: {file_name}[/bold]")
         uploaded = upload_files(file_name, bucket_name)
         
-        if uploaded:
-            print("\n✅ TEST PASSED: Bucket created and file uploaded successfully.")
-        else:
-            print("\n❌ TEST FAILED: File upload returned False.")
-        print("Listing buckets:")
-        list_buckets()
-    finally:
-        # 4. Cleanup
-        print("\n--- Cleaning up resources ---")
-        s3 = boto3.resource('s3')
-        bucket = s3.Bucket(bucket_name)
-        try:
-            # Check if bucket exists first to avoid 404
-            if bucket.creation_date:
-                bucket.objects.all().delete()
-                bucket.delete()
-                print(f"Bucket {bucket_name} deleted.")
-            else:
-                print(f"Bucket {bucket_name} does not exist, skipping cleanup.")
-        except Exception as e:
-            print(f"Note during cleanup: {e}")
+        if not uploaded:
+             raise Exception("File upload returned False.")
+
+        console.print("\n✅ Bucket created and file uploaded successfully.", style="bold green")
         
+        # 4. List Buckets
+        console.print("\n[bold]3. Listing buckets:[/bold]")
+        list_buckets()
+
+        console.print("\n✅ S3 Flow Test Passed Successfully.", style="bold green")
+
+    except Exception as e:
+        console.print(f"\n[bold red]❌ Test Failed:[/bold red] {e}")
+
+    finally:
+        # 5. Cleanup
+        console.print("\n[bold]4. Cleaning up resources...[/bold]")
+        
+        # Use simple boto3 to verify/delete local file
         if os.path.exists(file_name):
             os.remove(file_name)
-            print(f"File {file_name} removed.")
+            console.print(f"   Deleted local file {file_name}")
+
+        # Use the platform cleanup function
+        cleanup_s3_resources()
 
 if __name__ == "__main__":
     test_s3_flow()

@@ -1,5 +1,5 @@
 import boto3
-from src.utils.helpers import console, get_aws_user
+from src.utils.helpers import console, get_aws_user, progress_spinner
 
 current_user = get_aws_user()
 
@@ -38,36 +38,43 @@ def list_my_dns():
     
     try:
         # 1. Get all the Hosted Zones
-        zones_response = r53.list_hosted_zones()
         
-        for zone in zones_response.get('HostedZones', []):
-            zone_id = zone['Id'].split('/')[-1]
+        with progress_spinner("Listing Hosted Zones..."):
+            zones_response = r53.list_hosted_zones()
+            found_any = False
             
-            # Check the tags for current zone
-            tag_response = r53.list_tags_for_resource(
-                ResourceType='hostedzone',
-                ResourceId=zone_id
-            )
-            
-            tags = {t['Key']: t['Value'] for t in tag_response['ResourceTagSet']['Tags']}
-            
-            # Condition only if the tag is correct
-            if tags.get('CreatedBy') == 'Nadav-Platform-CLI':
-                console.print(f"\n[bold cyan]📍 Hosted Zone: {zone['Name']} ({zone_id})[/bold cyan]")
+            for zone in zones_response.get('HostedZones', []):
+                zone_id = zone['Id'].split('/')[-1]
                 
-                # List the records of the current zone
-                records = r53.list_resource_record_sets(HostedZoneId=zone_id)
+                # Check the tags for current zone
+                tag_response = r53.list_tags_for_resource(
+                    ResourceType='hostedzone',
+                    ResourceId=zone_id
+                )
                 
-                for record in records.get('ResourceRecordSets', []):
-                    if 'ResourceRecords' in record:
-                        values = [r['Value'] for r in record['ResourceRecords']]
-                        value_str = ", ".join(values)
-                    elif 'AliasTarget' in record:
-                        value_str = f"Alias -> {record['AliasTarget']['DNSName']}"
-                    else:
-                        value_str = "No Value"
+                tags = {t['Key']: t['Value'] for t in tag_response['ResourceTagSet']['Tags']}
+                
+                # Condition only if the tag is correct
+                if tags.get('CreatedBy') == 'Nadav-Platform-CLI':
+                    found_any = True
+                    console.print(f"\n[bold cyan]📍 Hosted Zone: {zone['Name']} ({zone_id})[/bold cyan]")
+                    
+                    # List the records of the current zone
+                    records = r53.list_resource_record_sets(HostedZoneId=zone_id)
+                    
+                    for record in records.get('ResourceRecordSets', []):
+                        if 'ResourceRecords' in record:
+                            values = [r['Value'] for r in record['ResourceRecords']]
+                            value_str = ", ".join(values)
+                        elif 'AliasTarget' in record:
+                            value_str = f"Alias -> {record['AliasTarget']['DNSName']}"
+                        else:
+                            value_str = "No Value"
 
-                    console.print(f"  [yellow]•[/yellow] [bold]{record['Name']}[/bold] [{record['Type']}] -> {value_str}")
+                        console.print(f"  [yellow]•[/yellow] [bold]{record['Name']}[/bold] [cyan][{record['Type']}][/cyan] -> {value_str}")
+
+        if not found_any:
+            console.print("[bold yellow]⚠️  No platform DNS zones found matching your criteria.[/bold yellow]")
 
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/bold red] {e}")

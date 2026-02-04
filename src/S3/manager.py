@@ -47,7 +47,7 @@ def create_bucket(bucket_name, region = 'us-east-1', is_public = False):
                     'RestrictPublicBuckets': False
                 }
             )
-            console.print("[bold yellow]⚠️  Bucket is configured to ALLOW public access.[/bold yellow]")
+            console.print("[bold yellow][blink]⚠️[/blink]  Bucket is configured to ALLOW public access.[/bold yellow]")
         else:
             print("Configuring private bucket...")
             s3_client.put_public_access_block(
@@ -91,7 +91,7 @@ def cleanup_s3_resources():
                     
                     # Delete the bucket
                     bucket.delete()
-                    console.print(f"     ✅ Deleted bucket: {bucket_name}")
+                    console.print(f"     ✅ Deleted bucket: [strike red]{bucket_name}[/strike red]")
         
         if not found_any:
             console.print("[green]✨ No platform S3 buckets found to clean.[/green]")
