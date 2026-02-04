@@ -34,12 +34,15 @@ Python-AWS-CLI/
 │   │   └── manager.py          # Route53 Logic (Zones, Records filtering)
 │   └── utils/
 │       ├── __init__.py
-│       ├── aws_identity.py     # Identity helpers (STS/IAM)
-│       └── ui_helper.py        # Rich-based console output
+│       └── helpers.py          # Identity helpers (STS/IAM) and Rich-based console output
 ├── tests/                      # Unit & Integration tests
+│       ├── test_ec2.py
+│       ├── test_route53_flow.py
+│       └── test_s3_flow.py
 ├── .gitignore
 ├── README.md                   # Documentation
 ├── requirements.txt            # Project dependencies
+├── post_install.py             # Welcome message after installation
 ├── setup.py                    # Package installation config
 └── main.py                     # Entry point script
 ```
