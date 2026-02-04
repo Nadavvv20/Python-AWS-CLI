@@ -11,6 +11,8 @@
 
 This tool acts as a **Platform Engineering Guardrail**, ensuring that all resources are created within safe, pre-defined standards. It enforces strict constraints (such as instance types and capacity limits) and abstracts complex AWS API calls into simple, intuitive commands.
 
+Tech Stack: Built with **Python** and the **AWS Boto3 SDK**. It features a robust CLI structure via **Click**, with advanced terminal styling and visual guardrails powered by the **Rich** and **Pyfiglet** libraries.
+
 ---
 
 ## 📂 Project Structure
@@ -32,12 +34,15 @@ Python-AWS-CLI/
 │   │   └── manager.py          # Route53 Logic (Zones, Records filtering)
 │   └── utils/
 │       ├── __init__.py
-│       ├── aws_identity.py     # Identity helpers (STS/IAM)
-│       └── ui_helper.py        # Rich-based console output
+│       └── helpers.py          # Identity helpers (STS/IAM) and Rich-based console output
 ├── tests/                      # Unit & Integration tests
+│       ├── test_ec2.py
+│       ├── test_route53_flow.py
+│       └── test_s3_flow.py
 ├── .gitignore
 ├── README.md                   # Documentation
 ├── requirements.txt            # Project dependencies
+├── post_install.py             # Welcome message after installation
 ├── setup.py                    # Package installation config
 └── main.py                     # Entry point script
 ```
@@ -56,8 +61,8 @@ Before installation, ensure you have:
 
 1. **Clone the repository:**
     ```bash
-    git clone [https://github.com/your-username/awsctl.git](https://github.com/your-username/awsctl.git)
-    cd awsctl
+    git clone https://github.com/Nadavvv20/Python-AWS-CLI.git
+    cd Python-AWS-CLI
     ```
 
 2. **Set up a Virtual Environment:**
@@ -78,9 +83,9 @@ Before installation, ensure you have:
 
 ## 🏷️ Tagging & Security Guardrails
 The tool enforces organizational standards automatically: 
-* **Consistent Tagging:** Every resource includes `CreatedBy=Nadav-Platform-CLI`, `Owner=<Current_User>` and `Environment`. 
+* **Consistent Tagging:** Every resource includes `CreatedBy=Nadav-Platform-CLI` and `Owner=<Current_User>`. 
 * **EC2 Constraints:** 
-    * Restricted to `t3.micro` or `t2.small`. 
+    * Restricted to `t3.micro` or `t3.small`. 
     * **Hard Cap:** Maximum of 2 running instances created by the CLI allowed simultaneously. 
 * **S3 Security:** Public buckets require explicit user confirmation (**Are you sure?**).
 * **S3 Encryption:** Every bucket created via the CLI, is configured with default encryption (SSE-S3).
