@@ -11,6 +11,8 @@
 
 This tool acts as a **Platform Engineering Guardrail**, ensuring that all resources are created within safe, pre-defined standards. It enforces strict constraints (such as instance types and capacity limits) and abstracts complex AWS API calls into simple, intuitive commands.
 
+Tech Stack: Built with **Python** and the **AWS Boto3 SDK**. It features a robust CLI structure via **Click**, with advanced terminal styling and visual guardrails powered by the **Rich** and **Pyfiglet** libraries.
+
 ---
 
 ## 📂 Project Structure
