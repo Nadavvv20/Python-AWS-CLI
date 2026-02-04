@@ -56,8 +56,8 @@ Before installation, ensure you have:
 
 1. **Clone the repository:**
     ```bash
-    git clone [https://github.com/your-username/awsctl.git](https://github.com/your-username/awsctl.git)
-    cd awsctl
+    git clone https://github.com/Nadavvv20/Python-AWS-CLI.git
+    cd Python-AWS-CLI
     ```
 
 2. **Set up a Virtual Environment:**
@@ -78,9 +78,9 @@ Before installation, ensure you have:
 
 ## 🏷️ Tagging & Security Guardrails
 The tool enforces organizational standards automatically: 
-* **Consistent Tagging:** Every resource includes `CreatedBy=Nadav-Platform-CLI`, `Owner=<Current_User>` and `Environment`. 
+* **Consistent Tagging:** Every resource includes `CreatedBy=Nadav-Platform-CLI` and `Owner=<Current_User>`. 
 * **EC2 Constraints:** 
-    * Restricted to `t3.micro` or `t2.small`. 
+    * Restricted to `t3.micro` or `t3.small`. 
     * **Hard Cap:** Maximum of 2 running instances created by the CLI allowed simultaneously. 
 * **S3 Security:** Public buckets require explicit user confirmation (**Are you sure?**).
 * **S3 Encryption:** Every bucket created via the CLI, is configured with default encryption (SSE-S3).
