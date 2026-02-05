@@ -95,12 +95,6 @@ The tool enforces organizational standards automatically:
 
 ## 🛠️ Command Reference Summary
 
-### Global Commands
-| Command | Options | Description |
-| :--- | :--- | :--- |
-| `awsctl list-all` | - | Lists ALL platform resources in a unified table. |
-| `awsctl cleanup-all` | - | Deletes ALL platform resources with a single command (Requires confirmation). |
-
 ### EC2 Commands (`awsctl ec2`)
 | Command | Options | Description |
 | :--- | :--- | :--- |
@@ -125,6 +119,12 @@ The tool enforces organizational standards automatically:
 | `record` | `zone_id`, `action`, `--name`, `--type`, `--value` | Manages DNS records (UPSERT/DELETE). |
 | `list` | - | Lists all CLI-created zones and their records. |
 | `cleanup` | - | Deletes all Hosted Zones managed by the CLI. |
+
+### Global Commands
+| Command | Options | Description |
+| :--- | :--- | :--- |
+| `awsctl list-all` | - | Lists ALL platform resources in a unified table. |
+| `awsctl cleanup-all` | - | Deletes ALL platform resources with a single command (Requires confirmation). |
 
 ---
 
