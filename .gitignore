@@ -13,3 +13,4 @@ __pycache__/
 .aws
 
 .vscode
+awsctl.egg-info
