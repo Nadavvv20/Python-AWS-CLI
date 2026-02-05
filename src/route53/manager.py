@@ -33,51 +33,69 @@ def create_hosted_zones(domain_name):
         console.print(f"[bold red]❌ Error:[/bold red] {e}")
         return None
 
-def list_my_dns():
+def get_hosted_zones():
+    """
+    Returns a list of dictionaries with zone details (id, name, records) for platform zones.
+    """
     r53 = boto3.client('route53')
+    zones_response = r53.list_hosted_zones()
     
-    try:
-        # 1. Get all the Hosted Zones
+    platform_zones = []
+    
+    for zone in zones_response.get('HostedZones', []):
+        zone_id = zone['Id'].split('/')[-1]
         
-        with progress_spinner("Listing Hosted Zones..."):
-            zones_response = r53.list_hosted_zones()
-            found_any = False
+        # Check the tags for current zone
+        try:
+            tag_response = r53.list_tags_for_resource(
+                ResourceType='hostedzone',
+                ResourceId=zone_id
+            )
+            tags = {t['Key']: t['Value'] for t in tag_response['ResourceTagSet']['Tags']}
             
-            for zone in zones_response.get('HostedZones', []):
-                zone_id = zone['Id'].split('/')[-1]
+            if tags.get('CreatedBy') == 'Nadav-Platform-CLI':
+                # Fetch records for this zone to return complete data
+                records_response = r53.list_resource_record_sets(HostedZoneId=zone_id)
+                records = records_response.get('ResourceRecordSets', [])
                 
-                # Check the tags for current zone
-                tag_response = r53.list_tags_for_resource(
-                    ResourceType='hostedzone',
-                    ResourceId=zone_id
-                )
-                
-                tags = {t['Key']: t['Value'] for t in tag_response['ResourceTagSet']['Tags']}
-                
-                # Condition only if the tag is correct
-                if tags.get('CreatedBy') == 'Nadav-Platform-CLI':
-                    found_any = True
-                    console.print(f"\n[bold cyan]📍 Hosted Zone: {zone['Name']} ({zone_id})[/bold cyan]")
-                    
-                    # List the records of the current zone
-                    records = r53.list_resource_record_sets(HostedZoneId=zone_id)
-                    
-                    for record in records.get('ResourceRecordSets', []):
-                        if 'ResourceRecords' in record:
-                            values = [r['Value'] for r in record['ResourceRecords']]
-                            value_str = ", ".join(values)
-                        elif 'AliasTarget' in record:
-                            value_str = f"Alias -> {record['AliasTarget']['DNSName']}"
-                        else:
-                            value_str = "No Value"
+                platform_zones.append({
+                    'Id': zone_id,
+                    'Name': zone['Name'],
+                    'Records': records
+                })
+        except Exception:
+            # Skip if any error checking tags (e.g. permission issues)
+            continue
+            
+    return platform_zones
 
-                        console.print(f"  [yellow]•[/yellow] [bold]{record['Name']}[/bold] [cyan][{record['Type']}][/cyan] -> {value_str}")
+def list_my_dns():
+    try:
+        with progress_spinner("Listing Hosted Zones..."):
+            zones = get_hosted_zones()
+            
+            if not zones:
+                console.print("[bold yellow]⚠️  No platform DNS zones found matching your criteria.[/bold yellow]")
+                return
 
-        if not found_any:
-            console.print("[bold yellow]⚠️  No platform DNS zones found matching your criteria.[/bold yellow]")
+            for zone in zones:
+                console.print(f"\n[bold cyan]📍 Hosted Zone: {zone['Name']} ({zone['Id']})[/bold cyan]")
+                
+                for record in zone['Records']:
+                    if 'ResourceRecords' in record:
+                        values = [r['Value'] for r in record['ResourceRecords']]
+                        value_str = ", ".join(values)
+                    elif 'AliasTarget' in record:
+                        value_str = f"Alias -> {record['AliasTarget']['DNSName']}"
+                    else:
+                        value_str = "No Value"
+
+                    console.print(f"  [yellow]•[/yellow] [bold]{record['Name']}[/bold] [cyan][{record['Type']}][/cyan] -> {value_str}")
 
     except Exception as e:
         console.print(f"[bold red]❌ Error:[/bold red] {e}")
+
+
 
 def manage_dns_record(zone_id, action, record_name, record_type, value):
   

@@ -1,7 +1,8 @@
 import click
-from src.ec2.manager import list_instances, EC2Creator, cleanup_ec2_resources
+from src.ec2.manager import list_instances, EC2Creator, cleanup_ec2_resources, change_instance_state
 from src.s3.manager import create_bucket, upload_files, list_buckets, cleanup_s3_resources
 from src.route53.manager import create_hosted_zones, list_my_dns, manage_dns_record, cleanup_dns_resources
+from src.platform_manager import list_all_resources, cleanup_all_resources
 
 
 @click.group()
@@ -9,6 +10,16 @@ def main_cli():
     """AWS Control CLI - Nadav's Platform Tool"""
     
     pass
+
+@main_cli.command(name="list-all")
+def cli_list_all():
+    """List ALL platform resources (EC2, S3, Route53)"""
+    list_all_resources()
+
+@main_cli.command(name="cleanup-all")
+def cli_cleanup_all():
+    """Delete ALL platform resources (EC2, S3, Route53)"""
+    cleanup_all_resources()
 
 # --- EC2 Group ---
 @main_cli.group()
@@ -29,6 +40,18 @@ def ec2_create(name, ami, instance_type):
     """Create a new EC2 instance"""
     creator = EC2Creator()
     creator.create_instance(ami_input=ami, instance_type_input=instance_type, instance_name_input=name)
+
+@ec2.command(name="stop")
+@click.argument("instance_id")
+def ec2_stop(instance_id):
+    """Stop an EC2 instance"""
+    change_instance_state(instance_id, "stop")
+
+@ec2.command(name="start")
+@click.argument("instance_id")
+def ec2_start(instance_id):
+    """Start an EC2 instance"""
+    change_instance_state(instance_id, "start")
 
 @ec2.command(name="cleanup")
 def ec2_cleanup():

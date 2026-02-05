@@ -20,4 +20,3 @@ build/
 dist/
 
 .vscode
-awsctl.egg-info
