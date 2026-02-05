@@ -23,6 +23,7 @@ Python-AWS-CLI/
 ├── src/
 │   ├── __init__.py
 │   ├── cli.py                  # Main CLI logic (Click groups & commands)
+│   ├── platform_manager.py     # Cross-resource logic (List All / Cleanup All)
 │   ├── ec2/
 │   │   ├── __init__.py
 │   │   └── manager.py          # EC2 Logic (Constraints, AMI lookup, Lifecycle)
@@ -41,7 +42,6 @@ Python-AWS-CLI/
 │       └── test_s3_flow.py
 ├── .gitignore
 ├── README.md                   # Documentation
-├── requirements.txt            # Project dependencies
 ├── post_install.py             # Welcome message after installation
 ├── setup.py                    # Package installation config
 └── main.py                     # Entry point script
@@ -95,10 +95,18 @@ The tool enforces organizational standards automatically:
 
 ## 🛠️ Command Reference Summary
 
+### Global Commands
+| Command | Options | Description |
+| :--- | :--- | :--- |
+| `awsctl list-all` | - | Lists ALL platform resources in a unified table. |
+| `awsctl cleanup-all` | - | Deletes ALL platform resources with a single command (Requires confirmation). |
+
 ### EC2 Commands (`awsctl ec2`)
 | Command | Options | Description |
 | :--- | :--- | :--- |
 | `create` | `--name`, `--ami`, `--type` | Creates a tagged instance (enforces 2-instance cap). |
+| `start` | `instance_id` | Starts a stopped instance. |
+| `stop` | `instance_id` | Stops a running instance. |
 | `list` | - | Lists all CLI-created instances and their status. |
 | `cleanup` | - | Terminates all instances managed by the CLI. |
 
@@ -127,6 +135,11 @@ Create a server with automatic AMI lookup:
 ```bash
 awsctl ec2 create --name dev-app --ami ubuntu --type t3.micro
 ```
+Start or Stop an instance:
+```bash
+awsctl ec2 stop i-0123456789abcdef0
+awsctl ec2 start i-0123456789abcdef0
+```
 ### Storage (S3)
 Upload a file to a secure bucket: 
 ```bash
@@ -141,6 +154,10 @@ awsctl dns record Z0123456789 UPSERT --name api.example.com --type A --value 1.2
 
 To avoid AWS costs, remove all resources created during your session:
 
+```bash
+awsctl cleanup-all
+```
+Or individually:
 ```bash
 awsctl ec2 cleanup
 awsctl s3 cleanup

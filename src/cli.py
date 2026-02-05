@@ -5,21 +5,15 @@ from src.route53.manager import create_hosted_zones, list_my_dns, manage_dns_rec
 from src.platform_manager import list_all_resources, cleanup_all_resources
 
 
-@click.group()
+class OrderedGroup(click.Group):
+    def list_commands(self, ctx):
+        return list(self.commands.keys())
+
+@click.group(cls=OrderedGroup)
 def main_cli():
     """AWS Control CLI - Nadav's Platform Tool"""
     
     pass
-
-@main_cli.command(name="list-all")
-def cli_list_all():
-    """List ALL platform resources (EC2, S3, Route53)"""
-    list_all_resources()
-
-@main_cli.command(name="cleanup-all")
-def cli_cleanup_all():
-    """Delete ALL platform resources (EC2, S3, Route53)"""
-    cleanup_all_resources()
 
 # --- EC2 Group ---
 @main_cli.group()
@@ -122,6 +116,16 @@ def dns_record(zone_id, action, name, record_type, value):
 def dns_cleanup():
     """Delete all platform hosted zones"""
     cleanup_dns_resources()
+
+@main_cli.command(name="list-all")
+def cli_list_all():
+    """List ALL platform resources (EC2, S3, Route53)"""
+    list_all_resources()
+
+@main_cli.command(name="cleanup-all")
+def cli_cleanup_all():
+    """Delete ALL platform resources (EC2, S3, Route53)"""
+    cleanup_all_resources()
 
 if __name__ == "__main__":
     main_cli()
