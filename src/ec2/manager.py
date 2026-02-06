@@ -6,29 +6,39 @@ from src.utils.helpers import console, progress_spinner, get_aws_user
 # Accessing the EC2 service in us-east-1 region
 ec2 = boto3.client('ec2', region_name='us-east-1')
 
+def get_instances():
+    """
+    Returns a list of EC2 instance dictionaries created by the platform.
+    """
+    response = ec2.describe_instances(
+        Filters=[
+            {
+                'Name': 'tag:CreatedBy',
+                'Values': ['Nadav-Platform-CLI']
+            },
+            {
+                'Name': 'instance-state-name',
+                'Values': ['running', 'pending', 'stopping', 'stopped', 'shutting-down', 'terminated']
+            }
+        ]
+    )
+    
+    instances = []
+    for reservation in response.get('Reservations', []):
+        for instance in reservation.get('Instances', []):
+            instances.append(instance)
+    return instances
+
 def list_instances():
     with progress_spinner("Listing instances..."):
-        response = ec2.describe_instances(
-            Filters=[
-                {
-                    'Name': 'tag:CreatedBy',
-                    'Values': ['Nadav-Platform-CLI']
-                },
-                {
-                    'Name': 'instance-state-name',
-                    'Values': ['running', 'pending', 'stopping', 'stopped']
-                }
-            ]
-        )
+        instances = get_instances()
         
-        instances = []
-        for reservation in response.get('Reservations', []):
-            for instance in reservation.get('Instances', []):
-                instances.append(instance)
-                print(instance['InstanceId'])
         if not instances:
             console.print("[yellow]⚠️  No instances found matching your criteria (Tag: CreatedBy=Nadav-Platform-CLI).[/yellow]")
             return
+
+        for instance in instances:
+            print(instance['InstanceId'])
 
 def change_instance_state(instance_id, action):
     response = ec2.describe_instances(

@@ -99,22 +99,29 @@ def cleanup_s3_resources():
     except Exception as e:
         console.print(f"[bold red]❌ Error during S3 cleanup:[/bold red] {e}")
 
-def list_buckets():
-
+def get_buckets():
+    """
+    Returns a list of S3 bucket names created by the platform.
+    """
     s3 = boto3.client('s3')
     response = s3.list_buckets()
     
-    # This variable indicates whether there are buckets that was made by Nadav-Platform-CLI or not.
-    # If at least 1 bucket was found, this will be changed to 'True'
-    bucket_found = False
+    platform_buckets = []
+    for bucket in response.get('Buckets', []):
+        if is_platform_resource(bucket["Name"]):
+            platform_buckets.append(bucket["Name"])
+            
+    return platform_buckets
 
+def list_buckets():
     with progress_spinner("Listing Buckets made with the CLI Platform, \n     this might take a few seconds..."):
-        for bucket in response['Buckets']:
-            if is_platform_resource(bucket["Name"]):
-                print(f'  {bucket["Name"]}')
-                bucket_found = True
-    if not bucket_found:
-        print("No buckets were found.")
+        buckets = get_buckets()
+        
+        if buckets:
+            for bucket_name in buckets:
+                print(f'  {bucket_name}')
+        else:
+            print("No buckets were found.")
 
 def upload_files(file_name, bucket_name, object_name=None):
     # Check if the bucket is made by the CLI platform
