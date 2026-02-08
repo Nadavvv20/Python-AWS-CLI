@@ -1,19 +1,65 @@
 import click
+import os
 from src.ec2.manager import list_instances, EC2Creator, cleanup_ec2_resources, change_instance_state
 from src.s3.manager import create_bucket, upload_files, list_buckets, cleanup_s3_resources
 from src.route53.manager import create_hosted_zones, list_my_dns, manage_dns_record, cleanup_dns_resources
 from src.platform_manager import list_all_resources, cleanup_all_resources
 
 
+def _show_first_run_banner():
+    """Show welcome banner on first run after installation."""
+    flag_dir = os.path.join(os.path.expanduser("~"), ".awsctl")
+    flag_file = os.path.join(flag_dir, ".installed")
+    
+    # Check if we already showed the banner
+    if os.path.exists(flag_file):
+        return
+    
+    try:
+        from rich.console import Console
+        from rich.panel import Panel
+        import pyfiglet
+        import time
+        
+        console = Console()
+        title = pyfiglet.figlet_format("awsctl", font="starwars", justify="center")
+        subtitle = "Made by Nadav Kamar | DevOps Engineer"
+        
+        console.print("\n")
+        console.print(Panel(
+            f"[bold cyan]{title}[/bold cyan]",
+            border_style="blue",
+            title="[bold green]Installation Complete![/bold green]",
+            subtitle="[yellow]Platform Engineering Tool[/yellow]"
+        ))
+        
+        console.print(f"[bold white]    >> ", end="")
+        for char in subtitle:
+            console.print(f"[bold white]{char}[/bold white]", end="")
+            time.sleep(0.08)
+        console.print("\n\n[bold]Ready to go! Type 'awsctl --help' to start.[/bold]\n")
+        
+        # Create flag file to prevent future runs
+        os.makedirs(flag_dir, exist_ok=True)
+        with open(flag_file, 'w') as f:
+            f.write("installed")
+    except Exception:
+        pass
+
+
 class OrderedGroup(click.Group):
     def list_commands(self, ctx):
         return list(self.commands.keys())
 
-@click.group(cls=OrderedGroup)
-def main_cli():
+@click.group(cls=OrderedGroup, invoke_without_command=True)
+@click.pass_context
+def main_cli(ctx):
     """AWS Control CLI - Nadav's Platform Tool"""
-    
-    pass
+    _show_first_run_banner()
+    # If no subcommand is provided, show help
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
+
 
 # --- EC2 Group ---
 @main_cli.group()
