@@ -3,7 +3,7 @@ import os
 import time
 
 # 1. Add the parent folder to the path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # 2. Importing the class
 from src.ec2.manager import EC2Creator, change_instance_state, cleanup_ec2_resources, list_instances
@@ -32,7 +32,7 @@ def run_integration_tests():
         # Create Instance
         console.print("\n[bold]3. Testing Instance Creation...[/bold]")
         instance_name = "Test-Auto-Instance"
-        result_msg = creator.create_instance("amazon-linux", "t3.micro", instance_name)
+        result_msg = creator.create_instance("amazon-linux", "t3.micro", instance_name, "test-key-auto")
         
         if not result_msg:
              raise Exception("Instance creation returned None.")

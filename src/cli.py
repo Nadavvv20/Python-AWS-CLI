@@ -75,11 +75,12 @@ def ec2_list():
 @ec2.command(name="create")
 @click.option("--name", required=True, help="Instance name tag")
 @click.option("--ami", default="ubuntu", help="AMI alias (ubuntu/amazon-linux)")
+@click.option("--key", required=True, help="Key Pair name (will be created if missing)")
 @click.option("--type", "instance_type", default="t3.micro", help="Instance type (t3.micro/t3.small)")
-def ec2_create(name, ami, instance_type):
+def ec2_create(name, ami, instance_type, key):
     """Create a new EC2 instance"""
     creator = EC2Creator()
-    creator.create_instance(ami_input=ami, instance_type_input=instance_type, instance_name_input=name)
+    creator.create_instance(ami_input=ami, instance_type_input=instance_type, instance_name_input=name, key_input=key)
 
 @ec2.command(name="stop")
 @click.argument("instance_id")
