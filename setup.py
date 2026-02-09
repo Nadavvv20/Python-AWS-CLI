@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages
+from post_install import run_welcome
 
 setup(
     name="awsctl",
