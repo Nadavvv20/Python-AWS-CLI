@@ -1,14 +1,65 @@
 import click
-from src.ec2.manager import list_instances, EC2Creator, cleanup_ec2_resources
+import os
+from src.ec2.manager import list_instances, EC2Creator, cleanup_ec2_resources, change_instance_state
 from src.s3.manager import create_bucket, upload_files, list_buckets, cleanup_s3_resources
 from src.route53.manager import create_hosted_zones, list_my_dns, manage_dns_record, cleanup_dns_resources
+from src.platform_manager import list_all_resources, cleanup_all_resources
 
 
-@click.group()
-def main_cli():
-    """AWS Control CLI - Nadav's Platform Tool"""
+def _show_first_run_banner():
+    """Show welcome banner on first run after installation."""
+    flag_dir = os.path.join(os.path.expanduser("~"), ".awsctl")
+    flag_file = os.path.join(flag_dir, ".installed")
     
-    pass
+    # Check if we already showed the banner
+    if os.path.exists(flag_file):
+        return
+    
+    try:
+        from rich.console import Console
+        from rich.panel import Panel
+        import pyfiglet
+        import time
+        
+        console = Console()
+        title = pyfiglet.figlet_format("awsctl", font="starwars", justify="center")
+        subtitle = "Made by Nadav Kamar | DevOps Engineer"
+        
+        console.print("\n")
+        console.print(Panel(
+            f"[bold cyan]{title}[/bold cyan]",
+            border_style="blue",
+            title="[bold green]Installation Complete![/bold green]",
+            subtitle="[yellow]Platform Engineering Tool[/yellow]"
+        ))
+        
+        console.print(f"[bold white]    >> ", end="")
+        for char in subtitle:
+            console.print(f"[bold white]{char}[/bold white]", end="")
+            time.sleep(0.08)
+        console.print("\n\n[bold]Ready to go! Type 'awsctl --help' to start.[/bold]\n")
+        
+        # Create flag file to prevent future runs
+        os.makedirs(flag_dir, exist_ok=True)
+        with open(flag_file, 'w') as f:
+            f.write("installed")
+    except Exception:
+        pass
+
+
+class OrderedGroup(click.Group):
+    def list_commands(self, ctx):
+        return list(self.commands.keys())
+
+@click.group(cls=OrderedGroup, invoke_without_command=True)
+@click.pass_context
+def main_cli(ctx):
+    """AWS Control CLI - Nadav's Platform Tool"""
+    _show_first_run_banner()
+    # If no subcommand is provided, show help
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
+
 
 # --- EC2 Group ---
 @main_cli.group()
@@ -29,6 +80,18 @@ def ec2_create(name, ami, instance_type):
     """Create a new EC2 instance"""
     creator = EC2Creator()
     creator.create_instance(ami_input=ami, instance_type_input=instance_type, instance_name_input=name)
+
+@ec2.command(name="stop")
+@click.argument("instance_id")
+def ec2_stop(instance_id):
+    """Stop an EC2 instance"""
+    change_instance_state(instance_id, "stop")
+
+@ec2.command(name="start")
+@click.argument("instance_id")
+def ec2_start(instance_id):
+    """Start an EC2 instance"""
+    change_instance_state(instance_id, "start")
 
 @ec2.command(name="cleanup")
 def ec2_cleanup():
@@ -99,6 +162,16 @@ def dns_record(zone_id, action, name, record_type, value):
 def dns_cleanup():
     """Delete all platform hosted zones"""
     cleanup_dns_resources()
+
+@main_cli.command(name="list-all")
+def cli_list_all():
+    """List ALL platform resources (EC2, S3, Route53)"""
+    list_all_resources()
+
+@main_cli.command(name="cleanup-all")
+def cli_cleanup_all():
+    """Delete ALL platform resources (EC2, S3, Route53)"""
+    cleanup_all_resources()
 
 if __name__ == "__main__":
     main_cli()

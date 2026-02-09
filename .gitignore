@@ -6,10 +6,17 @@ ENV/
 # Python cache
 __pycache__/
 *.py[cod]
+*$py.class
 
 # AWS credentials
 .aws/credentials
 .aws/config
 .aws
+
+# Distribution / Build
+awsctl.egg-info/
+.eggs/
+build/
+dist/
 
 .vscode
