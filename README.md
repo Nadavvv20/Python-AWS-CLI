@@ -136,7 +136,8 @@ Create a server with automatic AMI lookup and Key Pair handling:
 awsctl ec2 create --name dev-app --key my-key --ami ubuntu --type t3.micro
 ```
 *If `my-key` doesn't exist, it will be created and saved as `my-key.pem` in your current folder.*
-*A Security Group `dev-app-sg` will be created automatically with Port 22 open.*
+*A Security Group `Nadav-CLI-SG` will be created automatically with Port 22 open.*
+
 Start or Stop an instance:
 ```bash
 awsctl ec2 stop i-0123456789abcdef0
