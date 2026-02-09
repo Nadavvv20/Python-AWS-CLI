@@ -20,7 +20,7 @@ def get_instances():
             },
             {
                 'Name': 'instance-state-name',
-                'Values': ['running', 'pending', 'stopping', 'stopped', 'shutting-down', 'terminated']
+                'Values': ['running', 'pending', 'stopping', 'stopped', 'shutting-down']
             }
         ]
     )
