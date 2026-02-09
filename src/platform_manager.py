@@ -1,6 +1,6 @@
 from rich.table import Table
 from src.utils.helpers import console, progress_spinner
-from src.ec2.manager import get_instances, cleanup_ec2_resources
+from src.ec2.manager import get_instances, cleanup_ec2_resources, get_security_groups, delete_security_groups
 from src.s3.manager import get_buckets, cleanup_s3_resources
 from src.route53.manager import get_hosted_zones, cleanup_dns_resources
 
@@ -32,6 +32,19 @@ def list_all_resources():
                     f"{name_tag}\n({inst['InstanceId']})", 
                     f"[{state_color}]{state.upper()}[/{state_color}]", 
                     f"Type: {inst['InstanceType']}\nIP: {inst.get('PublicIpAddress', 'N/A')}"
+                )
+
+            # 1.5 Security Groups
+            sgs = get_security_groups()
+            for sg in sgs:
+                has_resources = True
+                name_tag = next((tag['Value'] for tag in sg.get('Tags', []) if tag['Key'] == 'Name'), "N/A")
+                
+                table.add_row(
+                    "Security Group",
+                    f"{name_tag}\n({sg['GroupId']})",
+                    "[green]ACTIVE[/green]",
+                    f"Description: {sg.get('Description', 'N/A')}"
                 )
 
             # 2. S3 Buckets
@@ -91,6 +104,9 @@ def cleanup_all_resources():
         # 3. Clean Route53
         console.print("\n[bold cyan]--- Cleaning Route53 Resources ---[/bold cyan]")
         cleanup_dns_resources()
+        
+        console.print("\n[bold cyan]--- Cleaning Security Groups ---[/bold cyan]")
+        delete_security_groups()
         
         console.print("\n[bold green]✨ Global Cleanup Complete! ✨[/bold green]")
         

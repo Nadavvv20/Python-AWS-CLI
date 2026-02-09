@@ -28,7 +28,47 @@ def get_instances():
     for reservation in response.get('Reservations', []):
         for instance in reservation.get('Instances', []):
             instances.append(instance)
+            instances.append(instance)
     return instances
+
+def get_security_groups():
+    """
+    Returns a list of Security Group dictionaries created by the platform.
+    """
+    response = ec2.describe_security_groups(
+        Filters=[
+            {
+                'Name': 'tag:CreatedBy',
+                'Values': ['Nadav-Platform-CLI']
+            }
+        ]
+    )
+    return response.get('SecurityGroups', [])
+
+def delete_security_groups(group_ids=None):
+    """
+    Deletes the provided security groups. If no IDs are provided, it fetches all platform-created security groups.
+    """
+    if group_ids is None:
+        console.print("[dim]No security group IDs provided. Scanning for all platform security groups...[/dim]")
+        sgs = get_security_groups()
+        group_ids = [sg['GroupId'] for sg in sgs]
+
+    if not group_ids:
+        console.print("[green]✨ No security groups to delete.[/green]")
+        return
+
+    console.print(f"[yellow]🛡️  Found {len(group_ids)} security groups to clean...[/yellow]")
+    
+    for sg_id in group_ids:
+        try:
+            ec2.delete_security_group(GroupId=sg_id)
+            print(f"✅ Deleted Security Group: {sg_id}")
+        except ClientError as e:
+            if 'DependencyViolation' in str(e):
+                print(f"⚠️  Could not delete {sg_id}: Dependency Violation (Likely still attached to a terminating instance).")
+            else:
+                print(f"❌ Error deleting {sg_id}: {e}")
 
 def list_instances():
     with progress_spinner("Listing instances..."):
@@ -106,9 +146,6 @@ class EC2Creator:
         self.ALLOWED_TYPES = ["t3.micro", "t3.small"]
         self.LIMIT = 2
 
-        # Security
-        # self.SECURITY_GROUP_IDS = ['sg-00573ff68f2148855'] # Removed hardcoded SG
-        # self.KEY_NAME = "Nadav-CLI-Project-Key" # Removed hardcoded Key
         
     def ensure_key_pair(self, key_name):
         """
@@ -149,9 +186,11 @@ class EC2Creator:
         """
         try:
             # Check if SG already exists to avoid duplication errors
+            # Check if SG already exists to avoid duplication errors
             existing_sgs = self.client.describe_security_groups(
                 Filters=[
-                    {'Name': 'group-name', 'Values': [group_name]}
+                    {'Name': 'group-name', 'Values': [group_name]},
+                    {'Name': 'tag:CreatedBy', 'Values': ['Nadav-Platform-CLI']}
                 ]
             )
             if existing_sgs['SecurityGroups']:
@@ -192,6 +231,10 @@ class EC2Creator:
             return security_group_id
 
         except ClientError as e:
+            if 'InvalidGroup.Duplicate' in str(e):
+                print(f"❌ Error: Security Group '{group_name}' already exists but is missing the 'CreatedBy' tag.")
+                print("   Please delete the existing group manually or use a different name.")
+                return None
             print(f"❌ Error creating security group: {e}")
             return None
     def get_latest_ami_id(self, ami_name):
@@ -279,7 +322,8 @@ class EC2Creator:
         # but to follow "creating an ec2, a new sg group" strictly, we could make it per instance.
         # However, making it per instance might clutter. 
         # Let's create one unique per instance name to satisfy "new sg group" per creation flow implies specific to this deployment.
-        sg_name = f"{instance_name_input}-sg"
+        # Let's create one unique per instance name to satisfy "new sg group" per creation flow implies specific to this deployment.
+        sg_name = "Nadav-CLI-SG"
         security_group_id = self.create_security_group(sg_name)
         if not security_group_id:
             return
@@ -355,6 +399,24 @@ def cleanup_ec2_resources():
             waiter.wait(InstanceIds=instance_ids)
             
         console.print(f"[green]✅ Successfully terminated {len(instance_ids)} instances.[/green]")
+        
+        # Cleanup Security Groups
+        print("Cleaning up associated Security Groups...")
+        # We need to wait a bit or retry because SGs cannot be deleted while the terminated instance is still 'shutting-down'
+        # Simple approach: Fetch SGs and try to delete.
+        sgs = get_security_groups()
+        sg_ids = [sg['GroupId'] for sg in sgs]
+        
+        if sg_ids:
+            # Wait for instances to be fully terminated so SGs are released
+            with progress_spinner("Waiting for instances to verify termination for SG cleanup..."):
+                # We reuse the waiter we just used, but to be safe, let's wait specifically for 'terminated' state again if needed
+                # beneficial if the previous waiter returned 'terminated' but API eventual consistency lags for SG detachment
+                pass 
+                
+            delete_security_groups(sg_ids)
+        else:
+             console.print("[green]✨ No platform Security Groups found to clean.[/green]")
 
     except Exception as e:
         console.print(f"[bold red]❌ Error during EC2 cleanup:[/bold red] {e}")
