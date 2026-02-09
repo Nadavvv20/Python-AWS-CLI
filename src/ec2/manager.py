@@ -2,6 +2,7 @@ import boto3
 import sys
 import os
 from src.utils.helpers import console, progress_spinner, get_aws_user
+from click import ClickException
 from botocore.exceptions import ClientError
 
 # Accessing the EC2 service in us-east-1 region
@@ -262,9 +263,9 @@ class EC2Creator:
 
     def _validate_inputs(self, instance_type, ami):
         if ami not in self.ALLOWED_AMIS:
-            raise ValueError(f"❌ This AMI is not valid - You can choose: {list(self.ALLOWED_AMIS.keys())}")
+            raise ClickException(f"❌ This AMI is not valid - You can choose: {list(self.ALLOWED_AMIS.keys())}")
         if instance_type not in self.ALLOWED_TYPES:
-            raise ValueError(f"❌ This type is not valid - You are allowed to create only {self.ALLOWED_TYPES[0]} or {self.ALLOWED_TYPES[1]}")
+            raise ClickException(f"❌ This type is not valid - You are allowed to create only {self.ALLOWED_TYPES[0]} or {self.ALLOWED_TYPES[1]}")
 
     def is_quota_available(self):
         print("Checking instances created by Nadav-Platform-CLI...")
