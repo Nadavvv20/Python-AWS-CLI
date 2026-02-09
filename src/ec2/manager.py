@@ -29,7 +29,6 @@ def get_instances():
     for reservation in response.get('Reservations', []):
         for instance in reservation.get('Instances', []):
             instances.append(instance)
-            instances.append(instance)
     return instances
 
 def get_security_groups():
