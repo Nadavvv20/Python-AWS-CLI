@@ -97,7 +97,7 @@ class EC2Creator:
 
         # Amis list
         self.ALLOWED_AMIS = {
-            "ubuntu" : "/aws/service/canonical/ubuntu/server/24.04/stable/current/arm64/hvm/ebs-gp3/ami-id",
+            "ubuntu" : "/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id",
             "amazon-linux" : "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
         }
 
