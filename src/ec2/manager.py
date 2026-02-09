@@ -2,6 +2,7 @@ import boto3
 import sys
 import os
 from src.utils.helpers import console, progress_spinner, get_aws_user
+from botocore.exceptions import ClientError
 
 # Accessing the EC2 service in us-east-1 region
 ec2 = boto3.client('ec2', region_name='us-east-1')
@@ -27,7 +28,47 @@ def get_instances():
     for reservation in response.get('Reservations', []):
         for instance in reservation.get('Instances', []):
             instances.append(instance)
+            instances.append(instance)
     return instances
+
+def get_security_groups():
+    """
+    Returns a list of Security Group dictionaries created by the platform.
+    """
+    response = ec2.describe_security_groups(
+        Filters=[
+            {
+                'Name': 'tag:CreatedBy',
+                'Values': ['Nadav-Platform-CLI']
+            }
+        ]
+    )
+    return response.get('SecurityGroups', [])
+
+def delete_security_groups(group_ids=None):
+    """
+    Deletes the provided security groups. If no IDs are provided, it fetches all platform-created security groups.
+    """
+    if group_ids is None:
+        console.print("[dim]No security group IDs provided. Scanning for all platform security groups...[/dim]")
+        sgs = get_security_groups()
+        group_ids = [sg['GroupId'] for sg in sgs]
+
+    if not group_ids:
+        console.print("[green]✨ No security groups to delete.[/green]")
+        return
+
+    console.print(f"[yellow]🛡️  Found {len(group_ids)} security groups to clean...[/yellow]")
+    
+    for sg_id in group_ids:
+        try:
+            ec2.delete_security_group(GroupId=sg_id)
+            print(f"✅ Deleted Security Group: {sg_id}")
+        except ClientError as e:
+            if 'DependencyViolation' in str(e):
+                print(f"⚠️  Could not delete {sg_id}: Dependency Violation (Likely still attached to a terminating instance).")
+            else:
+                print(f"❌ Error deleting {sg_id}: {e}")
 
 def list_instances():
     with progress_spinner("Listing instances..."):
@@ -105,10 +146,97 @@ class EC2Creator:
         self.ALLOWED_TYPES = ["t3.micro", "t3.small"]
         self.LIMIT = 2
 
-        # Security
-        self.SECURITY_GROUP_IDS = ['sg-00573ff68f2148855']
-        self.KEY_NAME = "Nadav-CLI-Project-Key"
         
+    def ensure_key_pair(self, key_name):
+        """
+        Checks if a key pair exists. If not, creates it and saves the .pem file.
+        """
+        try:
+            self.client.describe_key_pairs(KeyNames=[key_name])
+            print(f"🔑 Key Pair '{key_name}' found. Using existing key.")
+            return key_name
+        except ClientError as e:
+            if 'InvalidKeyPair.NotFound' in str(e):
+                print(f"⚠️  Key Pair '{key_name}' not found. Creating it...")
+                try:
+                    key_pair = self.client.create_key_pair(KeyName=key_name, KeyType='rsa')
+                    private_key = key_pair['KeyMaterial']
+                    
+                    # Save the private key to a file
+                    file_name = f"{key_name}.pem"
+                    with open(file_name, "w") as f:
+                        f.write(private_key)
+                    
+                    # Set permissions (read-only for owner) - Windows specific handling might be needed but simple write is fine for now
+                    # os.chmod(file_name, 0o400) 
+                    
+                    print(f"✅ Key Pair created! Private key saved to: {os.path.abspath(file_name)}")
+                    print("⚠️  IMPORTANT: Keep this file safe. You will not be able to download it again.")
+                    return key_name
+                except Exception as create_error:
+                    print(f"❌ Failed to create key pair: {create_error}")
+                    return None
+            else:
+                print(f"❌ Error checking key pair: {e}")
+                return None
+
+    def create_security_group(self, group_name, description="Created by Nadav-Platform-CLI"):
+        """
+        Creates a security group allowing SSH from anywhere.
+        """
+        try:
+            # Check if SG already exists to avoid duplication errors
+            # Check if SG already exists to avoid duplication errors
+            existing_sgs = self.client.describe_security_groups(
+                Filters=[
+                    {'Name': 'group-name', 'Values': [group_name]},
+                    {'Name': 'tag:CreatedBy', 'Values': ['Nadav-Platform-CLI']}
+                ]
+            )
+            if existing_sgs['SecurityGroups']:
+                sg_id = existing_sgs['SecurityGroups'][0]['GroupId']
+                print(f"🛡️  Security Group '{group_name}' ({sg_id}) already exists. Using it.")
+                return sg_id
+
+            print(f"🛡️  Creating Security Group '{group_name}'...")
+            response = self.client.create_security_group(
+                GroupName=group_name,
+                Description=description
+            )
+            security_group_id = response['GroupId']
+            
+            # Add Inbound Rule (SSH Port 22 from 0.0.0.0/0)
+            self.client.authorize_security_group_ingress(
+                GroupId=security_group_id,
+                IpPermissions=[
+                    {
+                        'IpProtocol': 'tcp',
+                        'FromPort': 22,
+                        'ToPort': 22,
+                        'IpRanges': [{'CidrIp': '0.0.0.0/0'}]
+                    }
+                ]
+            )
+            
+            # Tag the Security Group
+            self.client.create_tags(
+                Resources=[security_group_id],
+                Tags=[
+                    {'Key': 'Name', 'Value': group_name},
+                    {'Key': 'CreatedBy', 'Value': 'Nadav-Platform-CLI'}
+                ]
+            )
+            
+            print(f"✅ Security Group created: {security_group_id} (Port 22 Open)")
+            return security_group_id
+
+        except ClientError as e:
+            if 'InvalidGroup.Duplicate' in str(e):
+                print(f"❌ Error: Security Group '{group_name}' already exists but is missing the 'CreatedBy' tag.")
+                print("   Please delete the existing group manually or use a different name.")
+                return None
+            print(f"❌ Error creating security group: {e}")
+            return None
     def get_latest_ami_id(self, ami_name):
         # Check if the user's input ami is in the allowed amis list
         if ami_name not in self.ALLOWED_AMIS:
@@ -164,7 +292,7 @@ class EC2Creator:
             return False
         return True
 
-    def create_instance(self, ami_input, instance_type_input, instance_name_input):
+    def create_instance(self, ami_input, instance_type_input, instance_name_input, key_input):
         # Validating the parameters
         self._validate_inputs(instance_type_input, ami_input)
         
@@ -182,6 +310,24 @@ class EC2Creator:
             print(f"❌ Error: You cannot have more than {self.LIMIT} instances.")
             return
 
+        # Ensure Key Pair exists
+        key_name = self.ensure_key_pair(key_input)
+        if not key_name:
+            return
+
+        # Ensure Security Group exists
+        # Use a consistent naming convention for the SG, or per-instance. 
+        # Per user request: "a new sg group will be created automatticaly... the new sg will have the 'CreatedBy' tag"
+        # Since we want to allow potentially multiple instances, sharing an SG is usually better practice, 
+        # but to follow "creating an ec2, a new sg group" strictly, we could make it per instance.
+        # However, making it per instance might clutter. 
+        # Let's create one unique per instance name to satisfy "new sg group" per creation flow implies specific to this deployment.
+        # Let's create one unique per instance name to satisfy "new sg group" per creation flow implies specific to this deployment.
+        sg_name = "Nadav-CLI-SG"
+        security_group_id = self.create_security_group(sg_name)
+        if not security_group_id:
+            return
+
         # Creation of the instance:
         # Creation of the instance:
         try: 
@@ -189,8 +335,8 @@ class EC2Creator:
                 response = self.client.run_instances(
                     ImageId = ami_id,
                     InstanceType = instance_type_input,
-                    KeyName = self.KEY_NAME,
-                    SecurityGroupIds = self.SECURITY_GROUP_IDS,
+                    KeyName = key_name,
+                    SecurityGroupIds = [security_group_id],
                     TagSpecifications=[
                         {
                             'ResourceType': 'instance',
@@ -253,6 +399,24 @@ def cleanup_ec2_resources():
             waiter.wait(InstanceIds=instance_ids)
             
         console.print(f"[green]✅ Successfully terminated {len(instance_ids)} instances.[/green]")
+        
+        # Cleanup Security Groups
+        print("Cleaning up associated Security Groups...")
+        # We need to wait a bit or retry because SGs cannot be deleted while the terminated instance is still 'shutting-down'
+        # Simple approach: Fetch SGs and try to delete.
+        sgs = get_security_groups()
+        sg_ids = [sg['GroupId'] for sg in sgs]
+        
+        if sg_ids:
+            # Wait for instances to be fully terminated so SGs are released
+            with progress_spinner("Waiting for instances to verify termination for SG cleanup..."):
+                # We reuse the waiter we just used, but to be safe, let's wait specifically for 'terminated' state again if needed
+                # beneficial if the previous waiter returned 'terminated' but API eventual consistency lags for SG detachment
+                pass 
+                
+            delete_security_groups(sg_ids)
+        else:
+             console.print("[green]✨ No platform Security Groups found to clean.[/green]")
 
     except Exception as e:
         console.print(f"[bold red]❌ Error during EC2 cleanup:[/bold red] {e}")

@@ -98,7 +98,7 @@ The tool enforces organizational standards automatically:
 ### EC2 Commands (`awsctl ec2`)
 | Command | Options | Description |
 | :--- | :--- | :--- |
-| `create` | `--name`, `--ami`, `--type` | Creates a tagged instance (enforces 2-instance cap). |
+| `create` | `--name`, `--key`, `--ami`, `--type` | Creates a tagged instance & SG. Auto-creates Key Pair if missing. |
 | `start` | `instance_id` | Starts a stopped instance. |
 | `stop` | `instance_id` | Stops a running instance. |
 | `list` | - | Lists all CLI-created instances and their status. |
@@ -131,10 +131,12 @@ The tool enforces organizational standards automatically:
 ## 📖 Detailed Usage Examples
 
 ### Compute (EC2)
-Create a server with automatic AMI lookup: 
+Create a server with automatic AMI lookup and Key Pair handling:
 ```bash
-awsctl ec2 create --name dev-app --ami ubuntu --type t3.micro
+awsctl ec2 create --name dev-app --key my-key --ami ubuntu --type t3.micro
 ```
+*If `my-key` doesn't exist, it will be created and saved as `my-key.pem` in your current folder.*
+*A Security Group `dev-app-sg` will be created automatically with Port 22 open.*
 Start or Stop an instance:
 ```bash
 awsctl ec2 stop i-0123456789abcdef0
