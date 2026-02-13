@@ -19,7 +19,7 @@ pipeline {
             steps {
                 sh 'python3 -m venv .venv'
                 sh 'ls -la'
-                './.venv/bin/pip install .'
+                sh './.venv/bin/pip install .'
             }
         }
         stage('Run AWS check and notify') {
