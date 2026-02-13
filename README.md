@@ -166,5 +166,30 @@ awsctl ec2 cleanup
 awsctl s3 cleanup
 awsctl dns cleanup
 ```
+
+---
+
+## 🔔 Jenkins Pipeline & Monitoring
+
+To ensure cost optimization and visibility, the project includes a **Jenkins Pipeline** that runs daily to monitor active resources.
+
+### 🤖 Automation Workflow
+1. **Schedule:** Runs automatically every day at **17:00**.
+2. **Check:** The `instance_status_check.py` script queries AWS for any **running** EC2 instances created by this CLI.
+3. **Notify:** Sends a **Telegram notification** with the count of active servers.
+
+### 📂 Pipeline Files
+* **`Jenkinsfile`**: Defines the pipeline, manages credentials (AWS & Telegram), and sets up the environment.
+* **`instance_status_check.py`**: Python script that performs the logic:
+    *   Connects to AWS via Boto3.
+    *   Filters instances by tag `CreatedBy=Nadav-Platform-CLI`.
+    *   Sends a formatted report to your Telegram chat.
+
+### 💬 Example Notification
+> 🤖 **Jenkins Report:**
+> Date: 2023-10-27 17:00:01
+> Pipeline finished successfully!
+> Currently, there are **2 active servers** made by the platform in AWS.
+> *Don't forget to shut them down to save costs, by running 'awsctl ec2 cleanup'.*
 ---
 Developed by Nadav Kamar | DevOps Engineer
