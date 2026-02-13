@@ -18,6 +18,7 @@ pipeline {
         stage('Initialize Environment') {
             steps {
                 sh 'python3 -m venv .venv'
+                sh 'ls -la'
                 './.venv/bin/pip install .'
             }
         }
