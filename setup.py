@@ -1,5 +1,4 @@
 from setuptools import setup, find_packages
-from post_install import run_welcome
 
 setup(
     name="awsctl",
@@ -9,7 +8,8 @@ setup(
         "boto3",
         "click",
         "rich",
-        "pyfiglet"
+        "pyfiglet",
+        "requests"
     ],
     entry_points={
         "console_scripts": [
