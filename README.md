@@ -41,8 +41,10 @@ Python-AWS-CLI/
 │       ├── test_route53_flow.py
 │       └── test_s3_flow.py
 ├── .gitignore
+├── Jenkinsfile                 # Pipeline configuration
 ├── README.md                   # Documentation
 ├── install.sh                  # Installation script with welcome banner
+├── instance_status_check.py    # Daily resource monitoring script
 ├── post_install.py             # Welcome message after installation
 ├── setup.py                    # Package installation config
 └── main.py                     # Entry point script
