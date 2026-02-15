@@ -1,4 +1,22 @@
 from setuptools import setup, find_packages
+from setuptools.command.install import install
+import subprocess
+import sys
+
+
+class PostInstallCommand(install):
+    """Custom install command that shows the welcome banner after installation."""
+
+    def run(self):
+        # Run the standard install first
+        install.run(self)
+
+        # Now show the post-install banner
+        try:
+            subprocess.call([sys.executable, "post_install.py"])
+        except Exception:
+            pass
+
 
 setup(
     name="awsctl",
@@ -15,5 +33,8 @@ setup(
         "console_scripts": [
             "awsctl = src.cli:main_cli",
         ],
+    },
+    cmdclass={
+        "install": PostInstallCommand,
     },
 )
