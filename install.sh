@@ -15,4 +15,4 @@ echo "Installing awsctl..."
 pip install -e . --quiet
 
 echo ""
-python post_install.py
+python3 post_install.py

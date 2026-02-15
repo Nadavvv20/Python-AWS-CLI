@@ -42,6 +42,7 @@ Python-AWS-CLI/
 │       └── test_s3_flow.py
 ├── .gitignore
 ├── README.md                   # Documentation
+├── install.sh                  # Installation script with welcome banner
 ├── post_install.py             # Welcome message after installation
 ├── setup.py                    # Package installation config
 └── main.py                     # Entry point script
@@ -74,7 +75,13 @@ Before installation, ensure you have:
     source .venv/bin/activate
     ```
 
-3. **Install the tool in editable mode:** 
+3. **Install the tool:**
+    ```bash
+    bash install.sh
+    ```
+    > This installs all dependencies in editable mode and displays a welcome banner upon completion.
+
+    *Alternatively, you can install directly with pip (without the welcome banner):*
     ```bash
     pip install -e .
     ```
