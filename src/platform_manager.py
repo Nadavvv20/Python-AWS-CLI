@@ -105,9 +105,6 @@ def cleanup_all_resources():
         console.print("\n[bold cyan]--- Cleaning Route53 Resources ---[/bold cyan]")
         cleanup_dns_resources()
         
-        console.print("\n[bold cyan]--- Cleaning Security Groups ---[/bold cyan]")
-        delete_security_groups()
-        
         console.print("\n[bold green]✨ Global Cleanup Complete! ✨[/bold green]")
         
     except Exception as e:

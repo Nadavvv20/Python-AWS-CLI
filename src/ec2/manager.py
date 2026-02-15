@@ -402,21 +402,7 @@ def cleanup_ec2_resources():
         
         # Cleanup Security Groups
         print("Cleaning up associated Security Groups...")
-        # We need to wait a bit or retry because SGs cannot be deleted while the terminated instance is still 'shutting-down'
-        # Simple approach: Fetch SGs and try to delete.
-        sgs = get_security_groups()
-        sg_ids = [sg['GroupId'] for sg in sgs]
-        
-        if sg_ids:
-            # Wait for instances to be fully terminated so SGs are released
-            with progress_spinner("Waiting for instances to verify termination for SG cleanup..."):
-                # We reuse the waiter we just used, but to be safe, let's wait specifically for 'terminated' state again if needed
-                # beneficial if the previous waiter returned 'terminated' but API eventual consistency lags for SG detachment
-                pass 
-                
-            delete_security_groups(sg_ids)
-        else:
-             console.print("[green]✨ No platform Security Groups found to clean.[/green]")
+        delete_security_groups()
 
     except Exception as e:
         console.print(f"[bold red]❌ Error during EC2 cleanup:[/bold red] {e}")
