@@ -68,6 +68,3 @@ setup(
         "develop": PostDevelopCommand,
     },
 )
-
-
-)
